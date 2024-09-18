@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { getSdkInstance } from "hooks";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BurgerButton } from "./BurgerButton";
@@ -10,6 +11,14 @@ type ContainerProps = {
   children: JSX.Element;
 } & React.ComponentPropsWithoutRef<"div">;
 
+const vk =
+  "zvknam1qd2rnxg5qqqqpq8s3ejhum4mmr50puzyuuv8klj3" +
+  "uua76vevh2wnk4mlm7p65zvx9xaadwql4zp7m2vqwkm2yma" +
+  "jskms5zf8r8gsmmxqq8w43j77kcz69pkyzvsxnjurfhm6tl" +
+  "cst8wt8jqlw53n593p4ywswuu0058wsfrgjtaaxjh0acztk" +
+  "mav06dvh3jqslw3ncpcuruy6qsdxpar455d7sza4um75vvc" +
+  "s6h7sd96mxj6ghv29c6hrly5nh734r2vtpmyuy3rlacujs0l9";
+
 export const AppContainer = ({
   header,
   navigation,
@@ -17,6 +26,18 @@ export const AppContainer = ({
   ...props
 }: ContainerProps): JSX.Element => {
   const [displayNavigation, setDisplayNavigation] = useState(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any)["shieldedSync"] = async () => {
+    const { rpc } = await getSdkInstance();
+    await rpc.shieldedSync([vk]);
+    const asd = await rpc.queryBalance(vk, [
+      "tnam1qxgfw7myv4dh0qna4hq0xdg6lx77fzl7dcem8h7e",
+    ]);
+
+    // eslint-disable-next-line no-console
+    console.log(asd);
+  };
 
   return (
     <div className="custom-container pb-2" {...props}>
