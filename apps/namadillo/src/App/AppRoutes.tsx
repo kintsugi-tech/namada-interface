@@ -15,6 +15,7 @@ import { SettingsPanel } from "./Settings/SettingsPanel";
 import { Staking } from "./Staking";
 import { SwitchAccountModal } from "./SwitchAccount/SwitchAccountModal";
 
+import { Genesis } from "./Genesis/Genesis";
 import GovernanceRoutes from "./Governance/routes";
 import SettingsRoutes from "./Settings/routes";
 import { SignMessages } from "./SignMessages/SignMessages";
@@ -42,6 +43,7 @@ export const MainRoutes = (): JSX.Element => {
             path={`${GovernanceRoutes.index()}/*`}
             element={<Governance />}
           />
+          <Route path={`genesis`} element={<Genesis />} />
         </Route>
       </Routes>
       <Routes location={location} key={settingsAnimationKey}>
