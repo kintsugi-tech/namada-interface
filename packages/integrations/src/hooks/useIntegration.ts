@@ -12,6 +12,7 @@ import { Keplr, Metamask, Namada } from "@namada/integrations";
 import { ChainKey, ExtensionKey } from "@namada/types";
 
 type ExtensionConnection<T, U> = (
+  chainId: string,
   onSuccess: () => T,
   onFail?: () => U
 ) => Promise<void>;
@@ -70,11 +71,11 @@ export const useIntegrationConnection = <TSuccess, TFail, K extends ChainKey>(
   const [isConnectingToExtension, setIsConnectingToExtension] = useState(false);
 
   const connect: ExtensionConnection<TSuccess, TFail> = useCallback(
-    async (onSuccess, onFail) => {
+    async (chainId, onSuccess, onFail) => {
       setIsConnectingToExtension(true);
       try {
         if (integration.detect()) {
-          await integration.connect();
+          await integration.connect(chainId);
           await onSuccess();
         }
       } catch {
@@ -86,7 +87,6 @@ export const useIntegrationConnection = <TSuccess, TFail, K extends ChainKey>(
     },
     [chainKey]
   );
-
   return [integration, isConnectingToExtension, connect];
 };
 
