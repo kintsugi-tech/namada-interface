@@ -77,7 +77,7 @@ export const Genesis = () => {
 
     const lillo: Record<string, string> = {
       "tx_bond.wasm":
-        "3f6e89d5774bd44733d8370a2db6853e03b5d16e9c72fd540e2188ff51f5e77d",
+        "0000000000000000000000000000000000000000000000000000000000000000", // "3f6e89d5774bd44733d8370a2db6853e03b5d16e9c72fd540e2188ff51f5e77d",
     };
 
     console.log(checksums, lillo);
