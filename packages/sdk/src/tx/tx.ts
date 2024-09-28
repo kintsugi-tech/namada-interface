@@ -22,6 +22,7 @@ import {
   TxDetailsMsgValue,
   TxMsgValue,
   TxProps,
+  TxSignatureResponse,
   UnbondMsgValue,
   UnbondProps,
   VoteProposalMsgValue,
@@ -103,11 +104,10 @@ export class Tx {
 
   async getTxSignature(
     txBytes: Uint8Array,
-    txMsg: Uint8Array
-  ): Promise<Boolean> {
-    const pippo = await this.sdk.get_tx_signature(txBytes);
-
-    return true;
+    pubkey: string
+  ): Promise<TxSignatureResponse> {
+    const response = await this.sdk.get_tx_signature(txBytes, pubkey);
+    return deserialize(Buffer.from(response), TxSignatureResponse);
   }
 
   /**

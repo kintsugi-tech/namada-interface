@@ -2,7 +2,7 @@ import initSdk from "@heliax/namada-sdk/inline-init";
 import { getSdk, Sdk } from "@heliax/namada-sdk/web";
 import { ActionButton } from "@namada/components";
 import { BondProps, TxProps, WrapperTxProps } from "@namada/types";
-import { chainParametersAtom, nativeTokenAddressAtom } from "atoms/chain";
+import { nativeTokenAddressAtom } from "atoms/chain";
 import { rpcUrlAtom } from "atoms/settings";
 import BigNumber from "bignumber.js";
 import { getDefaultStore } from "jotai";
@@ -60,36 +60,34 @@ export const Genesis = () => {
     };
 
     let { tx } = await getSdkInstance();
+
     const txs: TxProps[] = [];
+    const bondTx = await tx.buildBond(wrapperTxProps, bondProps);
+    txs.push(bondTx);
 
-    const boh = await tx.buildBond(wrapperTxProps, bondProps);
+    // Probabily this will be needed for multi-validator delegation
+    // const txProps: TxProps[] = [];
+    // txProps.push(tx.buildBatch(txs));
 
-    console.log(boh);
-    txs.push(boh);
-    const txProps: TxProps[] = [];
+    // console.log(txProps);
 
-    txProps.push(tx.buildBatch(txs));
-
-    console.log(txProps, boh);
-    const store = getDefaultStore();
-    const { data: chainParameters } = store.get(chainParametersAtom);
-    const checksums = chainParameters?.checksums;
-
-    const lillo: Record<string, string> = {
+    const checksums: Record<string, string> = {
       "tx_bond.wasm":
-        "0000000000000000000000000000000000000000000000000000000000000000", // "3f6e89d5774bd44733d8370a2db6853e03b5d16e9c72fd540e2188ff51f5e77d",
+        "0000000000000000000000000000000000000000000000000000000000000000",
     };
 
-    console.log(checksums, lillo);
     let result = await signer.sign(
-      txProps,
+      txs,
       "tnam1qr8983etxg34sr42a5h7xklqspg7hm05luqf2txv",
-      lillo
+      checksums
     );
 
-    let test = await tx.getTxSignature(result[0], result[0]);
+    let test = await tx.getTxSignature(
+      result[0],
+      "tpknam1qqqfl5ad6s3kfvev9vjzjnc23ntpk9kwm5p0f7ptaaghmfu0clc3xeqx2dy"
+    );
 
-    console.log(result);
+    console.log("we got it!", test);
   }
 
   return (

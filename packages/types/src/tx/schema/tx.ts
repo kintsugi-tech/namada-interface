@@ -51,3 +51,16 @@ export class TxMsgValue {
     });
   }
 }
+
+export class TxSignature {
+  @field({ type: "string" })
+  pub_key!: string;
+
+  @field({ type: "string" })
+  signature!: string;
+}
+
+export class TxSignatureResponse {
+  @field({ type: vec(TxSignature) })
+  signatures!: TxSignature[];
+}
