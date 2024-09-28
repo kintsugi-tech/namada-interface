@@ -6,6 +6,7 @@
     "apps/namadillo",
     "apps/extension",
     "apps/faucet",
+    "apps/genesis-bond",
     "packages/*",
     "e2e"
   ],
