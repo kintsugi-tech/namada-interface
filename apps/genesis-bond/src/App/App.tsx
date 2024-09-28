@@ -2,8 +2,6 @@ import React, { createContext, useCallback, useState } from "react";
 import { GoGear } from "react-icons/go";
 import { ThemeProvider } from "styled-components";
 
-import initSdk from "@heliax/namada-sdk/inline-init";
-import { getSdk, Sdk } from "@heliax/namada-sdk/web";
 import { ActionButton, Alert, Modal } from "@namada/components";
 import { Namada } from "@namada/integrations";
 import { ColorMode, getTheme } from "@namada/utils";
@@ -37,6 +35,7 @@ import { SettingsForm } from "./SettingsForm";
 type AppContext = {
   isTestnetLive: boolean;
   setIsModalOpen: (value: boolean) => void;
+  integration: Namada;
 };
 
 export const AppContext = createContext<AppContext | null>(null);
@@ -62,13 +61,6 @@ export const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [settingsError, setSettingsError] = useState<string>();
   const theme = getTheme(colorMode);
-
-  async function getSdkInstance(): Promise<Sdk> {
-    const { cryptoMemory } = await initSdk();
-
-    const sdk = getSdk(cryptoMemory, "http://127.0.0.1:26657", "", "");
-    return sdk;
-  }
 
   useUntil(
     {
@@ -110,6 +102,7 @@ export const App: React.FC = () => {
       value={{
         isTestnetLive,
         setIsModalOpen,
+        integration,
       }}
     >
       <ThemeProvider theme={theme}>

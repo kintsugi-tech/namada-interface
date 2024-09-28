@@ -1,11 +1,19 @@
 import BigNumber from "bignumber.js";
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 
 import { ActionButton, Alert, AmountInput, Select } from "@namada/components";
-import { Account } from "@namada/types";
+import {
+  Account,
+  BondProps,
+  TxProps,
+  TxSignature,
+  WrapperTxProps,
+} from "@namada/types";
 import { shortenAddress } from "@namada/utils";
 
-import { TransferResponse } from "../utils";
+import { Bond, getSdkInstance, TransferResponse } from "../utils";
+
+import { AppContext } from "./App";
 import {
   ButtonContainer,
   InfoContainer,
@@ -33,6 +41,8 @@ export const GenesisBondForm: React.FC<Props> = ({
   accounts,
   isTestnetLive,
 }) => {
+  const { integration } = useContext(AppContext)!;
+
   const accountLookup = accounts.reduce(
     (acc, account) => {
       acc[account.address] = account;
@@ -42,8 +52,12 @@ export const GenesisBondForm: React.FC<Props> = ({
   );
 
   const [account, setAccount] = useState<Account>(accounts[0]);
-  const [validator, setValidator] = useState<string>();
+  const [validator, setValidator] = useState<string>(
+    "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p"
+  );
   const [amount, setAmount] = useState<number | undefined>(undefined);
+  const [bonds, setBonds] = useState<Bond[]>([]);
+
   const [error, setError] = useState<string>();
   const [status, setStatus] = useState(Status.Completed);
   const [statusText, setStatusText] = useState<string>();
@@ -57,7 +71,7 @@ export const GenesisBondForm: React.FC<Props> = ({
   const validatorSelectData = [
     {
       label: "Kintsugi Nodes",
-      value: "kintsugi-1",
+      value: "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p",
     },
     {
       label: "Dimi",
@@ -71,9 +85,69 @@ export const GenesisBondForm: React.FC<Props> = ({
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
 
-      // do nothing
+      if (!account || !validator || !amount) {
+        console.log(account, validator, amount);
+        console.error("Please provide the required values!");
+        return;
+      }
 
-      alert("click");
+      // Init SDK
+      let { tx } = await getSdkInstance();
+
+      // Prepare tx
+      const bondProps: BondProps = {
+        source: account.address,
+        validator: validator,
+        amount: new BigNumber(amount),
+      };
+
+      const wrapperTxProps: WrapperTxProps = {
+        token: "tnam1qqzywyugkgpp9ptl3702ld8k79lv0memlurnh2hh",
+        feeAmount: new BigNumber(0),
+        gasLimit: new BigNumber(0),
+        chainId: "namada-genesis",
+        publicKey: account.publicKey ?? "",
+        memo: "",
+      };
+
+      const txs: TxProps[] = [];
+      const bondTx = await tx.buildBond(wrapperTxProps, bondProps);
+      txs.push(bondTx);
+
+      const checksums: Record<string, string> = {
+        "tx_bond.wasm":
+          "0000000000000000000000000000000000000000000000000000000000000000",
+      };
+
+      let signer = integration.signer();
+
+      let result = await signer?.sign(txs, account.address, checksums);
+
+      if (!result) {
+        console.error("No result from signing");
+        return;
+      }
+
+      let bonds: Bond[] = [];
+      for (const res of result) {
+        let signatures = new Map<string, string>();
+
+        let signResponse = await tx.getTxSignature(
+          result[0],
+          account.publicKey ?? ""
+        );
+
+        signResponse.signatures.forEach((s: TxSignature) => {
+          signatures.set(s.pub_key, s.signature);
+        });
+
+        bonds.push({
+          ...bondProps,
+          source: account.publicKey ?? "",
+          signatures,
+        });
+      }
+      setBonds(bonds);
     },
     [account, validator, amount]
   );
@@ -119,6 +193,29 @@ export const GenesisBondForm: React.FC<Props> = ({
           }
         />
       </InputContainer>
+      <FormStatus>
+        {bonds.length > 0 && (
+          <div className="w-full font-mono break-all">
+            {bonds.map((bond, i) => (
+              <p className="mt-4" key={i}>
+                [[bond]] <br />
+                source = "{bond.source}"
+                <br />
+                validator = "{bond.validator}" <br />
+                amount = "{bond.amount.toString()}" <br />
+                <br />
+                [bond.signatures]
+                <br />
+                {Array.from(bond.signatures).map(([key, value]) => (
+                  <div key={key}>
+                    {key} = "{value}"
+                  </div>
+                ))}
+              </p>
+            ))}
+          </div>
+        )}
+      </FormStatus>
 
       {status !== Status.Error && (
         <FormStatus>
@@ -159,7 +256,7 @@ export const GenesisBondForm: React.FC<Props> = ({
           onClick={handleSubmit}
           disabled={!isFormValid}
         >
-          Get Testnet Tokens
+          Sign Bond
         </ActionButton>
       </ButtonContainer>
     </GenesisFormContainer>
