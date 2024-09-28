@@ -8,6 +8,7 @@ mod wallet;
 
 use self::io::WebIo;
 use crate::rpc_client::HttpClient;
+use crate::types::genesis::{GenesisSignature, GetTxSignatureResponse};
 use crate::utils::set_panic_hook;
 #[cfg(feature = "web")]
 use crate::utils::to_bytes;
@@ -19,24 +20,22 @@ use namada_sdk::borsh::{self, BorshDeserialize};
 use namada_sdk::chain::ChainId;
 use namada_sdk::eth_bridge::bridge_pool::build_bridge_pool_tx;
 use namada_sdk::hash::Hash;
-use namada_sdk::io::Io;
 use namada_sdk::key::RefTo;
 use namada_sdk::key::{common, ed25519, SigScheme};
 use namada_sdk::masp::ShieldedContext;
 use namada_sdk::rpc::query_epoch;
-use namada_sdk::signing::{self, SigningTxData};
+use namada_sdk::signing::SigningTxData;
 use namada_sdk::string_encoding::Format;
 use namada_sdk::time::DateTimeUtc;
-use namada_sdk::token::transaction::components::amount;
-use namada_sdk::token::{DenominatedAmount, NATIVE_MAX_DECIMAL_PLACES};
+use namada_sdk::token::DenominatedAmount;
 use namada_sdk::tx::data::{pos, Fee, TxType};
 use namada_sdk::tx::{
     build_batch, build_bond, build_claim_rewards, build_ibc_transfer, build_redelegation,
     build_reveal_pk, build_transparent_transfer, build_unbond, build_vote_proposal, build_withdraw,
-    prepare_tx, process_tx, Code, Commitment, Data, ProcessTxResponse, Section, Tx,
+    process_tx, Code, Commitment, Data, ProcessTxResponse, Section, Tx,
 };
 use namada_sdk::wallet::{Store, Wallet};
-use namada_sdk::{display_line, Namada, NamadaImpl};
+use namada_sdk::{Namada, NamadaImpl};
 use std::str::FromStr;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 /// Represents the Sdk public API.
@@ -204,18 +203,46 @@ impl Sdk {
     }
 
     // get signature from tx
-    pub async fn get_tx_signature(&self, tx_bytes: &[u8]) -> Result<JsValue, JsError> {
-        display_line!(self.namada.io(), "test dei test");
+    pub async fn get_tx_signature(
+        &self,
+        tx_bytes: &[u8],
+        public_key: &str,
+    ) -> Result<JsValue, JsError> {
         let tx = Tx::try_from_slice(tx_bytes)?;
+        let raw_header_hash = tx.raw_header_hash();
 
-        for section in tx.clone().sections {
-            if let Section::Authorization(signatures) = section {
-                display_line!(self.namada.io(), "Ne abbiamo una..");
-                display_line!(self.namada.io(), "Signatures: {signatures:?}");
-            }
+        // Extract signature from section
+        let sigs = tx
+            .clone()
+            .sections
+            .into_iter()
+            .find_map(|sec| {
+                if let Section::Authorization(signatures) = sec {
+                    if [raw_header_hash] == signatures.targets.as_slice() {
+                        Some(signatures)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+
+        // Init response struct
+        let mut final_signs: GetTxSignatureResponse = GetTxSignatureResponse {
+            signatures: Vec::new(),
+        };
+
+        // Convert signatures to strings - so we don't have to go crazy on the typescript side of this
+        for (_, sig) in sigs.signatures.into_iter() {
+            final_signs.signatures.push(GenesisSignature {
+                pub_key: public_key.into(),
+                signature: sig.to_string(),
+            });
         }
 
-        to_js_result(borsh::to_vec(&tx)?)
+        to_js_result(borsh::to_vec(&final_signs)?)
     }
 
     // Broadcast Tx
@@ -390,16 +417,9 @@ impl Sdk {
         self.serialize_tx_result(tx, wrapper_tx_msg, signing_data)
     }
 
-    pub async fn build_bond_dimi(
-        &self,
-        bond_msg: &[u8],
-        wrapper_tx_msg: &[u8],
-    ) -> Result<JsValue, JsError> {
-        let args = args::bond_tx_args(bond_msg, wrapper_tx_msg)?;
-        let (tx, signing_data) = build_bond(&self.namada, &args).await?;
-        self.serialize_tx_result(tx, wrapper_tx_msg, signing_data)
-    }
-
+    /*
+       Special function to build a pre-bond transaction for the genesis
+    */
     pub async fn build_genesis_bond(
         &self,
         bond_msg: &[u8],
@@ -415,37 +435,47 @@ impl Sdk {
             Address::from(&genesis_fee_payer_pk())
         }
 
+        // This could be optimized without using this generic function and only extracting the data we really need.
+        // But I'm lazy
         let args = args::bond_tx_args(bond_msg, wrapper_tx_msg)?;
 
         let source = args.source;
         let validator = args.validator;
 
+        // Genesis transactions are special, and they have some placeholder data in some fields.
         let mut tx = Tx::from_type(TxType::Raw);
 
+        // Chain id is always "namada-genesis"
         tx.header.chain_id = ChainId("namada-genesis".into());
+
+        // Timestamp is always 2001 - Nice date
         tx.header.timestamp = DateTimeUtc::from_unix_timestamp(
             // Mon Jan 01 2001 01:01:01 UTC+0000
             978310861,
         )
         .unwrap();
 
+        // Code is always all 0
         tx.set_code(Code {
             salt: [0; 8],
             code: Commitment::Hash(Default::default()),
             tag: Some("tx_bond.wasm".to_string()),
         });
 
+        // This is the bond data, we are going to serialize it. It's the only piece with real data of the whole transaction
         let data = pos::Bond {
             validator: validator.clone(),
             amount: args.amount,
             source: source.clone(),
         };
 
+        // serialization stuff
         tx.set_data(Data {
             salt: [0; 8],
             data: data.serialize_to_vec(),
         });
 
+        // Fee payer is always the genesis fee payer (empty pub key)
         let fee_payer = genesis_fee_payer_pk();
         tx.add_wrapper(
             Fee {
@@ -455,10 +485,8 @@ impl Sdk {
             fee_payer,
             0.into(),
         );
-        let tx = tx;
 
-        display_line!(self.namada.io(), "TX: {tx:?}");
-
+        // for now we are supporting only regular accounts - no multisig
         let pks = args.tx.signing_keys.clone();
         let signing_data = SigningTxData {
             owner: source.clone(),
