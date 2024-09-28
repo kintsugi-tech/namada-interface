@@ -6,7 +6,7 @@ export const AppHeader: React.FC = () => {
   return (
     <AppHeaderContainer>
       <Heading className="uppercase text-black text-4xl" level="h1">
-        Namada Faucet
+        Namada Genesis Pre-Bond
       </Heading>
     </AppHeaderContainer>
   );

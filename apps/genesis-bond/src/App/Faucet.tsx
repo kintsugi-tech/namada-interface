@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { sanitize } from "dompurify";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   ActionButton,
@@ -13,7 +13,6 @@ import { Account } from "@namada/types";
 import { bech32mValidation, shortenAddress } from "@namada/utils";
 
 import { Data, PowChallenge, TransferResponse } from "../utils";
-import { AppContext } from "./App";
 import {
   ButtonContainer,
   InfoContainer,
@@ -40,11 +39,6 @@ type Props = {
 const bech32mPrefix = "tnam";
 
 export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
-  const {
-    api,
-    settings: { difficulty, tokens, withdrawLimit },
-  } = useContext(AppContext)!;
-
   const accountLookup = accounts.reduce(
     (acc, account) => {
       acc[account.address] = account;
@@ -71,47 +65,17 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
     []
   );
 
-  useEffect(() => {
-    if (tokens?.NAM) {
-      setTokenAddress(tokens.NAM);
-    }
-  }, [tokens]);
-
   const isFormValid: boolean =
     Boolean(tokenAddress) &&
     Boolean(amount) &&
-    (amount || 0) <= withdrawLimit &&
+    (amount || 0) <= 5 &&
     Boolean(account) &&
     status !== Status.PendingPowSolution &&
     status !== Status.PendingTransfer &&
-    typeof difficulty !== "undefined" &&
     isTestnetLive;
 
   const submitFaucetTransfer = async (submitData: Data): Promise<void> => {
-    try {
-      setStatus(Status.PendingTransfer);
-      const response = await api.submitTransfer(submitData).catch((e) => {
-        console.info(e);
-        const { code, message } = e;
-        throw new Error(`Unable to submit transfer: ${code} ${message}`);
-      });
-
-      if (response.sent) {
-        // Reset form if successful
-        setAmount(0);
-        setError(undefined);
-        setStatus(Status.Completed);
-        setStatusText("Transfer succeeded!");
-        setResponseDetails(response);
-        return;
-      }
-      setStatus(Status.Completed);
-      setStatusText("Transfer did not succeed.");
-      console.info(response);
-    } catch (e) {
-      setError(`${e}`);
-      setStatus(Status.Error);
-    }
+    // do nothing
   };
 
   const postPowChallenge = (powChallenge: PowChallenge): Promise<string> =>
@@ -126,12 +90,7 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
   const handleSubmit = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      if (
-        !account ||
-        !amount ||
-        !tokenAddress ||
-        typeof difficulty === "undefined"
-      ) {
+      if (!account || !amount || !tokenAddress) {
         console.error("Please provide the required values!");
         return;
       }
@@ -160,32 +119,7 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
       setStatus(Status.PendingPowSolution);
       setStatusText(undefined);
 
-      try {
-        const { challenge, tag } = await api
-          .challenge()
-          .catch(({ message, code }) => {
-            throw new Error(
-              `Unable to request challenge: ${code} - ${message}`
-            );
-          });
-
-        const solution = await postPowChallenge({ challenge, difficulty });
-        const submitData: Data = {
-          solution,
-          tag,
-          challenge,
-          transfer: {
-            target: account.address,
-            token: sanitizedToken,
-            amount: amount * 1_000_000,
-          },
-        };
-
-        await submitFaucetTransfer(submitData);
-      } catch (e) {
-        setError(`${e}`);
-        setStatus(Status.Error);
-      }
+      // do nothing
     },
     [account, tokenAddress, amount]
   );
@@ -218,15 +152,15 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
 
       <InputContainer>
         <AmountInput
-          placeholder={`From 1 to ${withdrawLimit}`}
+          placeholder={`From 1 to ${5}`}
           label="Amount"
           value={amount === undefined ? undefined : new BigNumber(amount)}
           min={0}
           maxDecimalPlaces={3}
           onChange={(e) => setAmount(e.target.value?.toNumber())}
           error={
-            amount && amount > withdrawLimit ?
-              `Amount must be less than or equal to ${withdrawLimit}`
+            amount && amount > 4 ?
+              `Amount must be less than or equal to ${5}`
             : ""
           }
         />

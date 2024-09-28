@@ -1,0 +1,24 @@
+{
+	"files": [
+		{
+			"path": "apps/namadillo/src/atoms/staking/services.ts",
+			"bookmarks": [
+				{
+					"line": 20,
+					"column": 0,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": "apps/namadillo/src/atoms/staking/atoms.ts",
+			"bookmarks": [
+				{
+					"line": 32,
+					"column": 0,
+					"label": ""
+				}
+			]
+		}
+	]
+}

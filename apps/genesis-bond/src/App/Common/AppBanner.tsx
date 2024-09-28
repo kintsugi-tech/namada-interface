@@ -3,14 +3,13 @@ import React, { useContext } from "react";
 import { Banner, BannerContents } from "./Banner.components";
 
 export const AppBanner: React.FC = () => {
-  const { isTestnetLive, settings } = useContext(AppContext)!;
+  const { isTestnetLive } = useContext(AppContext)!;
   return (
     <>
-      {!isTestnetLive && settings?.startsAtText && (
+      {!isTestnetLive && (
         <Banner>
           <BannerContents>
-            Testnet will go live {settings.startsAtText}! Faucet is disabled
-            until then.
+            Testnet will go live Faucet is disabled until then.
           </BannerContents>
         </Banner>
       )}

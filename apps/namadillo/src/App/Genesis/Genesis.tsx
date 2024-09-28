@@ -124,7 +124,8 @@ export const Genesis = () => {
           <>
             <p>
               Account: {account.alias} <br />
-              Address: {account.address}
+              Address: {account.address} <br />
+              Public Key: {account.publicKey}
             </p>
           </>
         )}

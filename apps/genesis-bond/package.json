@@ -1,7 +1,7 @@
 {
   "name": "@kintsugi-tech/namada-genesis-bonds",
   "version": "0.1.0",
-  "description": "Namada Faucet",
+  "description": "Namada Genesis Pre-Bond Generator",
   "repository": "https://github.com/anoma/namada-interface/",
   "author": "Heliax Dev <info@heliax.dev>",
   "license": "MIT",
