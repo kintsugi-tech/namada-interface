@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export const FaucetFormContainer = styled.form`
+export const GenesisFormContainer = styled.form`
   flex-direction: column;
   justify-content: start;
   align-items: center;

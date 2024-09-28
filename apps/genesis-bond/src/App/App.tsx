@@ -19,7 +19,6 @@ import {
   SettingsButtonContainer,
   TopSection,
 } from "App/App.components";
-import { FaucetForm } from "App/Faucet";
 
 import { chains } from "@namada/chains";
 import { useUntil } from "@namada/hooks";
@@ -32,6 +31,7 @@ import {
   CardsContainer,
   Faq,
 } from "./Common";
+import { GenesisBondForm } from "./Genesis";
 import { SettingsForm } from "./SettingsForm";
 
 type AppContext = {
@@ -160,7 +160,10 @@ export const App: React.FC = () => {
               )}
 
               {isExtensionConnected && (
-                <FaucetForm accounts={accounts} isTestnetLive={isTestnetLive} />
+                <GenesisBondForm
+                  accounts={accounts}
+                  isTestnetLive={isTestnetLive}
+                />
               )}
               {extensionAttachStatus === ExtensionAttachStatus.Installed &&
                 !isExtensionConnected && (

@@ -1,28 +1,21 @@
 import BigNumber from "bignumber.js";
-import { sanitize } from "dompurify";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
-import {
-  ActionButton,
-  Alert,
-  AmountInput,
-  Input,
-  Select,
-} from "@namada/components";
+import { ActionButton, Alert, AmountInput, Select } from "@namada/components";
 import { Account } from "@namada/types";
-import { bech32mValidation, shortenAddress } from "@namada/utils";
+import { shortenAddress } from "@namada/utils";
 
-import { Data, PowChallenge, TransferResponse } from "../utils";
+import { TransferResponse } from "../utils";
 import {
   ButtonContainer,
   InfoContainer,
   InputContainer,
 } from "./App.components";
 import {
-  FaucetFormContainer,
   FormStatus,
+  GenesisFormContainer,
   PreFormatted,
-} from "./Faucet.components";
+} from "./Genesis.components";
 
 enum Status {
   PendingPowSolution,
@@ -36,9 +29,10 @@ type Props = {
   isTestnetLive: boolean;
 };
 
-const bech32mPrefix = "tnam";
-
-export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
+export const GenesisBondForm: React.FC<Props> = ({
+  accounts,
+  isTestnetLive,
+}) => {
   const accountLookup = accounts.reduce(
     (acc, account) => {
       acc[account.address] = account;
@@ -48,7 +42,7 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
   );
 
   const [account, setAccount] = useState<Account>(accounts[0]);
-  const [tokenAddress, setTokenAddress] = useState<string>();
+  const [validator, setValidator] = useState<string>();
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string>();
   const [status, setStatus] = useState(Status.Completed);
@@ -60,72 +54,32 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
     value: address,
   }));
 
-  const powSolver: Worker = useMemo(
-    () => new Worker(new URL("../workers/powWorker.ts", import.meta.url)),
-    []
-  );
+  const validatorSelectData = [
+    {
+      label: "Kintsugi Nodes",
+      value: "kintsugi-1",
+    },
+    {
+      label: "Dimi",
+      value: "kintsugi-2",
+    },
+  ];
 
-  const isFormValid: boolean =
-    Boolean(tokenAddress) &&
-    Boolean(amount) &&
-    (amount || 0) <= 5 &&
-    Boolean(account) &&
-    status !== Status.PendingPowSolution &&
-    status !== Status.PendingTransfer &&
-    isTestnetLive;
-
-  const submitFaucetTransfer = async (submitData: Data): Promise<void> => {
-    // do nothing
-  };
-
-  const postPowChallenge = (powChallenge: PowChallenge): Promise<string> =>
-    new Promise((resolve) => {
-      powSolver.onmessage = ({ data }) => {
-        resolve(data);
-        powSolver.onmessage = null;
-      };
-      powSolver.postMessage(powChallenge);
-    });
+  const isFormValid: boolean = true;
 
   const handleSubmit = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      if (!account || !amount || !tokenAddress) {
-        console.error("Please provide the required values!");
-        return;
-      }
-
-      // Validate target and token inputs
-      const sanitizedToken = sanitize(tokenAddress);
-
-      if (!sanitizedToken) {
-        setStatus(Status.Error);
-        setError("Invalid token address!");
-        return;
-      }
-
-      if (!account) {
-        setStatus(Status.Error);
-        setError("No account found!");
-        return;
-      }
-
-      if (!bech32mValidation(bech32mPrefix, sanitizedToken)) {
-        setError("Invalid bech32m address for token address!");
-        setStatus(Status.Error);
-        return;
-      }
-
-      setStatus(Status.PendingPowSolution);
-      setStatusText(undefined);
 
       // do nothing
+
+      alert("click");
     },
-    [account, tokenAddress, amount]
+    [account, validator, amount]
   );
 
   return (
-    <FaucetFormContainer>
+    <GenesisFormContainer>
       <InputContainer>
         {accounts.length > 0 ?
           <Select
@@ -142,25 +96,25 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
       </InputContainer>
 
       <InputContainer>
-        <Input
-          label="Token Address (defaults to NAM)"
-          value={tokenAddress}
-          onChange={(e) => setTokenAddress(e.target.value)}
-          autoFocus={true}
+        <Select
+          data={validatorSelectData}
+          value={validator}
+          label="Validator"
+          onChange={(e) => setValidator(e.target.value)}
         />
       </InputContainer>
 
       <InputContainer>
         <AmountInput
-          placeholder={`From 1 to ${5}`}
+          placeholder={`From 1 to ${5000}`}
           label="Amount"
           value={amount === undefined ? undefined : new BigNumber(amount)}
           min={0}
           maxDecimalPlaces={3}
           onChange={(e) => setAmount(e.target.value?.toNumber())}
           error={
-            amount && amount > 4 ?
-              `Amount must be less than or equal to ${5}`
+            amount && amount > 5000 ?
+              `Amount must be less than or equal to ${5000}`
             : ""
           }
         />
@@ -208,6 +162,6 @@ export const FaucetForm: React.FC<Props> = ({ accounts, isTestnetLive }) => {
           Get Testnet Tokens
         </ActionButton>
       </ButtonContainer>
-    </FaucetFormContainer>
+    </GenesisFormContainer>
   );
 };
