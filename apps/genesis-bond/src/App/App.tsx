@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useEffect, useState } from "react";
-import { GoGear } from "react-icons/go";
 import { ThemeProvider } from "styled-components";
 
 import { ActionButton, Alert, Modal } from "@namada/components";
@@ -13,8 +12,6 @@ import {
   FaucetContainer,
   GlobalStyles,
   InfoContainer,
-  SettingsButton,
-  SettingsButtonContainer,
   TopSection,
 } from "App/App.components";
 
@@ -118,15 +115,6 @@ export const App: React.FC = () => {
         <BackgroundImage imageUrl={dotsBackground} />
         <AppContainer>
           <ContentContainer>
-            <SettingsButtonContainer>
-              <SettingsButton
-                onClick={() => setIsModalOpen(true)}
-                title="Settings"
-              >
-                <GoGear />
-              </SettingsButton>
-            </SettingsButtonContainer>
-
             <TopSection>
               <AppHeader />
             </TopSection>
@@ -187,17 +175,37 @@ export const App: React.FC = () => {
             <BottomSection>
               <CardsContainer>
                 <CallToActionCard
-                  description="Contribute to the Namada network's resiliency"
-                  title="RUN A FULL NODE"
-                  href={""}
+                  description="Read about pre genesis stage 2 and how to prepare for it"
+                  title="PRE GENESIS INFO"
+                  href={
+                    "https://forum.namada.net/t/pre-genesis-stage-2-begins/962?u=gavin"
+                  }
                 />
                 <CallToActionCard
-                  description="Integrate Namada into applications or extend its capabilities"
-                  title="BECOME A BUILDER"
-                  href={""}
+                  description="What is Namada?"
+                  title="NAMADA MISSION"
+                  href={"https://forum.namada.net/t/the-namada-mission/275"}
                 />
               </CardsContainer>
               <Faq />
+              <div className=" mb-16 text-center text-sm text-black">
+                This interface is provided by Kintsugi Nodes validator as is.
+                It's not "official" and it's not affiliated directly with Namada
+                team. We don't take any responsibility in case your pre-bond
+                transactions are not correctly included in the genesis block.
+                Feel free to contact us in case you have any question.
+                <br /> <br />
+                Sourcecode of this ui can be found{" "}
+                <a
+                  href="https://github.com/kintsugi-tech/namada-interface/tree/dimi/genesis"
+                  className="underline"
+                  target="_blank"
+                >
+                  here
+                </a>
+                , along with all the namada-web-sdk modifications that we had to
+                do to make this work.
+              </div>
             </BottomSection>
           </ContentContainer>
         </AppContainer>

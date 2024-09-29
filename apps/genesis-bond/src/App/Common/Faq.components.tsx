@@ -82,6 +82,7 @@ export const DropDownTitleText: FunctionComponent<PropsWithChildren> = ({
 };
 
 const FaqUrlStyle = styled.a`
+  text-decoration: underline;
   color: ${(props) => props.theme.colors.utility3.black};
   &:hover {
     background: ${(props) => props.theme.colors.secondary.main};
