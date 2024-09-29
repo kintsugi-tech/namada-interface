@@ -1,46 +1,29 @@
 import BigNumber from "bignumber.js";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 
-import { ActionButton, Alert, AmountInput, Select } from "@namada/components";
 import {
-  Account,
-  BondProps,
-  TxProps,
-  TxSignature,
-  WrapperTxProps,
-} from "@namada/types";
+  ActionButton,
+  Alert,
+  AmountInput,
+  Checkbox,
+  Select,
+} from "@namada/components";
+import { Account, BondProps, TxProps } from "@namada/types";
 import { shortenAddress } from "@namada/utils";
 
-import { Bond, getSdkInstance, TransferResponse } from "../utils";
+import { Bond, getBondTx, getSdkInstance } from "../utils";
 
 import { AppContext } from "./App";
-import {
-  ButtonContainer,
-  InfoContainer,
-  InputContainer,
-} from "./App.components";
-import {
-  FormStatus,
-  GenesisFormContainer,
-  PreFormatted,
-} from "./Genesis.components";
+import { ButtonContainer, InputContainer } from "./App.components";
+import { FormStatus, GenesisFormContainer } from "./Genesis.components";
 
-enum Status {
-  PendingPowSolution,
-  PendingTransfer,
-  Completed,
-  Error,
-}
-
+const KINTSUGI_ADDR = "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p";
 type Props = {
   accounts: Account[];
-  isTestnetLive: boolean;
+  validators: { label: string; value: string }[];
 };
 
-export const GenesisBondForm: React.FC<Props> = ({
-  accounts,
-  isTestnetLive,
-}) => {
+export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   const { integration } = useContext(AppContext)!;
 
   const accountLookup = accounts.reduce(
@@ -52,104 +35,158 @@ export const GenesisBondForm: React.FC<Props> = ({
   );
 
   const [account, setAccount] = useState<Account>(accounts[0]);
-  const [validator, setValidator] = useState<string>(
-    "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p"
-  );
+
+  const [validator, setValidator] = useState<string>(KINTSUGI_ADDR);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
+  const [balance, setBalance] = useState<number>(0);
+  const [automatic, setAutomatic] = useState(true);
+  const [tip, setTip] = useState(false);
 
+  const [success, setSuccess] = useState<string>();
   const [error, setError] = useState<string>();
-  const [status, setStatus] = useState(Status.Completed);
-  const [statusText, setStatusText] = useState<string>();
-  const [responseDetails, setResponseDetails] = useState<TransferResponse>();
 
   const accountsSelectData = accounts.map(({ alias, address }) => ({
     label: `${alias} - ${shortenAddress(address)}`,
     value: address,
   }));
 
-  const validatorSelectData = [
-    {
-      label: "Kintsugi Nodes",
-      value: "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p",
-    },
-    {
-      label: "Dimi",
-      value: "kintsugi-2",
-    },
-  ];
-
   const isFormValid: boolean = true;
+
+  useEffect(() => {
+    const getBalance = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/balance/${account.address}`
+        );
+        const b = (await res.json()) as { balance: string };
+
+        setBalance(parseFloat(b.balance));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    getBalance();
+  }, [account]);
+
+  useEffect(() => {
+    setSuccess(undefined);
+    setError(undefined);
+    setBonds([]);
+  }, [automatic]);
 
   const handleSubmit = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      setError(undefined);
+      setSuccess(undefined);
 
       if (!account || !validator || !amount) {
         console.log(account, validator, amount);
-        console.error("Please provide the required values!");
+        setError("Please provide the required values!");
         return;
       }
 
-      // Init SDK
-      let { tx } = await getSdkInstance();
+      try {
+        // Calculate amounts
+        let regular_amount =
+          tip ? BigNumber(Math.ceil(amount * 0.8)) : BigNumber(amount);
+        let tip_amount =
+          tip ? BigNumber(amount).minus(regular_amount) : BigNumber(0);
 
-      // Prepare tx
-      const bondProps: BondProps = {
-        source: account.address,
-        validator: validator,
-        amount: new BigNumber(amount),
-      };
+        // Init SDK
+        let { tx } = await getSdkInstance();
+        const txs: TxProps[] = [];
+        let bondProps: BondProps[] = [];
 
-      const wrapperTxProps: WrapperTxProps = {
-        token: "tnam1qqzywyugkgpp9ptl3702ld8k79lv0memlurnh2hh",
-        feeAmount: new BigNumber(0),
-        gasLimit: new BigNumber(0),
-        chainId: "namada-genesis",
-        publicKey: account.publicKey ?? "",
-        memo: "",
-      };
-
-      const txs: TxProps[] = [];
-      const bondTx = await tx.buildBond(wrapperTxProps, bondProps);
-      txs.push(bondTx);
-
-      const checksums: Record<string, string> = {
-        "tx_bond.wasm":
-          "0000000000000000000000000000000000000000000000000000000000000000",
-      };
-
-      let signer = integration.signer();
-
-      let result = await signer?.sign(txs, account.address, checksums);
-
-      if (!result) {
-        console.error("No result from signing");
-        return;
-      }
-
-      let bonds: Bond[] = [];
-      for (const res of result) {
-        let signatures = new Map<string, string>();
-
-        let signResponse = await tx.getTxSignature(
-          result[0],
-          account.publicKey ?? ""
-        );
-
-        signResponse.signatures.forEach((s: TxSignature) => {
-          signatures.set(s.pub_key, s.signature);
+        // Prepare tx
+        bondProps.push({
+          source: account.address,
+          validator: validator,
+          amount: new BigNumber(regular_amount),
         });
 
-        bonds.push({
-          ...bondProps,
-          source: account.publicKey ?? "",
-          signatures,
-        });
+        txs.push(await getBondTx(tx, bondProps[0], account));
+
+        // Prepare tip tx
+        if (tip_amount > BigNumber(0)) {
+          bondProps.push({
+            source: account.address,
+            validator: KINTSUGI_ADDR,
+            amount: new BigNumber(tip_amount),
+          });
+
+          txs.push(await getBondTx(tx, bondProps[1], account));
+        }
+
+        // genesis checksums are placeholder
+        const checksums: Record<string, string> = {
+          "tx_bond.wasm":
+            "0000000000000000000000000000000000000000000000000000000000000000",
+        };
+
+        let signer = integration.signer();
+
+        let result = await signer?.sign(txs, account.address, checksums);
+
+        if (!result) {
+          console.error("No result from signing");
+          setError("Error: No result from signing");
+          return;
+        }
+
+        let bonds: Bond[] = [];
+        let i = 0;
+        for (const res of result) {
+          let signResponse = await tx.getTxSignature(
+            res,
+            account.publicKey ?? ""
+          );
+
+          bonds.push({
+            ...bondProps[i],
+            source: account.publicKey ?? "",
+            signatures: signResponse.signatures,
+          });
+          i++;
+        }
+
+        if (automatic) {
+          // Submit bonds to api
+          const response = await fetch(
+            `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/submit_bond`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ bonds: bonds }),
+            }
+          );
+
+          if (response.ok) {
+            setSuccess(
+              "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
+            );
+          } else {
+            throw new Error(
+              `Unable to submit bond transaction to API ${response.status}`
+            );
+          }
+          return;
+        } else {
+          setBonds(bonds);
+          setSuccess(
+            "Your bond transaction has been signed correctly! Please copy paste the signed bond.toml from the below box, and open a pull request on GitHub yourself following this guide."
+          );
+        }
+      } catch (e) {
+        console.error(e);
+        setError(`Unable to sign transaction. ${e}`);
       }
-      setBonds(bonds);
     },
-    [account, validator, amount]
+    [account, validator, amount, tip, automatic]
   );
 
   return (
@@ -171,7 +208,7 @@ export const GenesisBondForm: React.FC<Props> = ({
 
       <InputContainer>
         <Select
-          data={validatorSelectData}
+          data={validators}
           value={validator}
           label="Validator"
           onChange={(e) => setValidator(e.target.value)}
@@ -180,71 +217,91 @@ export const GenesisBondForm: React.FC<Props> = ({
 
       <InputContainer>
         <AmountInput
-          placeholder={`From 1 to ${5000}`}
+          placeholder={`100 NAM`}
           label="Amount"
           value={amount === undefined ? undefined : new BigNumber(amount)}
           min={0}
           maxDecimalPlaces={3}
           onChange={(e) => setAmount(e.target.value?.toNumber())}
-          error={
-            amount && amount > 5000 ?
-              `Amount must be less than or equal to ${5000}`
-            : ""
-          }
+          error={amount && amount > balance ? `Insufficient Balance` : ""}
         />
+        <span className="mt-2 text-white text-xs">
+          Genesis Balance: {balance.toFixed(2)} NAM
+        </span>
       </InputContainer>
+
+      <InputContainer>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="automatic-check"
+            className="bg-neutral-600 text-yellow-500"
+            checked={automatic}
+            onChange={() => {
+              setAutomatic(!automatic);
+            }}
+          />
+          <label htmlFor={"automatic-check"} className="text-white text-sm">
+            Enable automatic submission of signature (no PR on GitHub needed)
+          </label>
+        </div>
+      </InputContainer>
+
+      {validator !== KINTSUGI_ADDR && (
+        <InputContainer>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="kintsugi-check"
+              className="bg-neutral-600 text-yellow-500"
+              checked={tip}
+              onChange={() => {
+                setTip(!tip);
+              }}
+            />
+            <label htmlFor={"kintsugi-check"} className="text-white text-sm">
+              Delegate 20% also to{" "}
+              <a
+                href="https://kintsugi.tech"
+                className="underline text-yellow"
+                target="_blank"
+              >
+                Kintsugi Validator
+              </a>{" "}
+              - as a thank for building this interface
+            </label>
+          </div>
+        </InputContainer>
+      )}
+
+      {error && <Alert type="error">{error}</Alert>}
+      {success && <Alert type="success">{success}</Alert>}
+
       <FormStatus>
         {bonds.length > 0 && (
-          <div className="w-full font-mono break-all">
-            {bonds.map((bond, i) => (
-              <p className="mt-4" key={i}>
-                [[bond]] <br />
-                source = "{bond.source}"
-                <br />
-                validator = "{bond.validator}" <br />
-                amount = "{bond.amount.toString()}" <br />
-                <br />
-                [bond.signatures]
-                <br />
-                {Array.from(bond.signatures).map(([key, value]) => (
-                  <div key={key}>
-                    {key} = "{value}"
-                  </div>
-                ))}
-              </p>
-            ))}
-          </div>
+          <>
+            <div className="mt-4 text-sm text-white">signed-bond.toml</div>
+            <div className="w-full mt-1 font-mono break-all border rounded-md p-4">
+              {bonds.map((bond, i) => (
+                <p key={i}>
+                  {i > 0 && <br />}
+                  [[bond]] <br />
+                  source = "{bond.source}"
+                  <br />
+                  validator = "{bond.validator}" <br />
+                  amount = "{bond.amount.toString()}" <br />
+                  <br />
+                  [bond.signatures]
+                  <br />
+                  {bond.signatures.map((s) => (
+                    <span key={s.pub_key}>
+                      {s.pub_key} = "{s.signature}"
+                    </span>
+                  ))}
+                </p>
+              ))}
+            </div>
+          </>
         )}
       </FormStatus>
-
-      {status !== Status.Error && (
-        <FormStatus>
-          {status === Status.PendingPowSolution && (
-            <InfoContainer>
-              <Alert type="warning">Computing POW Solution...</Alert>
-            </InfoContainer>
-          )}
-          {status === Status.PendingTransfer && (
-            <InfoContainer>
-              <Alert type="warning">Processing Faucet Transfer..</Alert>
-            </InfoContainer>
-          )}
-          {status === Status.Completed && statusText && (
-            <InfoContainer>
-              <Alert type="info">{statusText}</Alert>
-            </InfoContainer>
-          )}
-
-          {responseDetails &&
-            status !== Status.PendingPowSolution &&
-            status !== Status.PendingTransfer && (
-              <PreFormatted>
-                {JSON.stringify(responseDetails, null, 2)}
-              </PreFormatted>
-            )}
-        </FormStatus>
-      )}
-      {status === Status.Error && <Alert type="error">{error}</Alert>}
 
       <ButtonContainer>
         <ActionButton

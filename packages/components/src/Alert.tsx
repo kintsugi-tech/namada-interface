@@ -8,7 +8,7 @@ const alert = tv({
   },
   variants: {
     type: {
-      success: "",
+      success: { base: "text-green-500", title: "text-green-500" },
       error: { base: "text-red-500" },
       removal: { base: "bg-pink-800 text-pink" },
       warning: { base: "bg-yellow-900 text-yellow" },

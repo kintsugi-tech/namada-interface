@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useState } from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import { GoGear } from "react-icons/go";
 import { ThemeProvider } from "styled-components";
 
@@ -21,19 +21,13 @@ import {
 import { chains } from "@namada/chains";
 import { useUntil } from "@namada/hooks";
 import { Account } from "@namada/types";
+import { loadValidators } from "utils";
 import dotsBackground from "../../public/bg-dots.svg";
-import {
-  AppBanner,
-  AppHeader,
-  CallToActionCard,
-  CardsContainer,
-  Faq,
-} from "./Common";
+import { AppHeader, CallToActionCard, CardsContainer, Faq } from "./Common";
 import { GenesisBondForm } from "./Genesis";
 import { SettingsForm } from "./SettingsForm";
 
 type AppContext = {
-  isTestnetLive: boolean;
   setIsModalOpen: (value: boolean) => void;
   integration: Namada;
 };
@@ -56,7 +50,9 @@ export const App: React.FC = () => {
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [colorMode, _] = useState<ColorMode>(initialColorMode);
-  const [isTestnetLive, setIsTestnetLive] = useState(true);
+  const [validators, setValidators] = useState<
+    { label: string; value: string }[]
+  >([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [settingsError, setSettingsError] = useState<string>();
@@ -97,17 +93,28 @@ export const App: React.FC = () => {
     }
   }, [integration]);
 
+  useEffect(() => {
+    const loadVals = async () => {
+      try {
+        const vals = await loadValidators();
+        setValidators(vals);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    loadVals();
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
-        isTestnetLive,
         setIsModalOpen,
         integration,
       }}
     >
       <ThemeProvider theme={theme}>
         <GlobalStyles colorMode={colorMode} />
-        <AppBanner />
         <BackgroundImage imageUrl={dotsBackground} />
         <AppContainer>
           <ContentContainer>
@@ -152,11 +159,16 @@ export const App: React.FC = () => {
                 </InfoContainer>
               )}
 
-              {isExtensionConnected && (
-                <GenesisBondForm
-                  accounts={accounts}
-                  isTestnetLive={isTestnetLive}
-                />
+              {isExtensionConnected && validators.length > 0 && (
+                <GenesisBondForm accounts={accounts} validators={validators} />
+              )}
+
+              {isExtensionConnected && validators.length <= 0 && (
+                <InfoContainer>
+                  <Alert type="error">
+                    Failed to load validators from API. Try again later.
+                  </Alert>
+                </InfoContainer>
               )}
               {extensionAttachStatus === ExtensionAttachStatus.Installed &&
                 !isExtensionConnected && (

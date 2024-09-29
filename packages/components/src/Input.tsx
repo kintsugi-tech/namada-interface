@@ -9,14 +9,14 @@ import { GoEye, GoEyeClosed } from "react-icons/go";
 const inputClassList = tv({
   slots: {
     field: clsx(
-      "bg-black border rounded-sm text-white text-base font-medium leading-[1.25]",
+      "bg-neutral-800 border rounded-sm text-white text-base font-medium leading-[1.25]",
       "py-5 px-4 w-full transition-all duration-150 ease-out focus:outline-0 active:outline-0 focus:outline-0",
-      "placeholder:text-neutral-700 placeholder:transition-opacity placeholder:duration-150 placeholder:ease-out",
+      "placeholder:text-neutral-400 placeholder:transition-opacity placeholder:duration-150 placeholder:ease-out",
       "hover:placeholder:opacity-70 focus:placeholder:opacity-0 select:bg-neutral-600",
       "[&[readonly]]:select-none [&[readonly]]:pointer-events-none"
     ),
-    label: "text-white text-sm font-medium [&_p]:pb-1",
-    labelText: "pl-1.5",
+    label: "text-sm font-medium text-neutral-300 w-full [&_p]:pb-1",
+    labelText: "",
     error: "text-red-500 hidden text-xs font-normal pl-1.5",
     inputWrapper: "flex relative",
     icon: clsx(
