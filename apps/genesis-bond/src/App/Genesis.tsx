@@ -10,6 +10,7 @@ import {
 } from "@namada/components";
 import { Account, BondProps, TxProps } from "@namada/types";
 import { shortenAddress } from "@namada/utils";
+import { ImSpinner8 } from "react-icons/im";
 
 import { Bond, getBondTx, getSdkInstance } from "../utils";
 
@@ -36,6 +37,8 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
 
   const [account, setAccount] = useState<Account>(accounts[0]);
 
+  const [loading, setLoading] = useState(false);
+
   const [validator, setValidator] = useState<string>(KINTSUGI_ADDR);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
@@ -50,8 +53,6 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     label: `${alias} - ${shortenAddress(address)}`,
     value: address,
   }));
-
-  const isFormValid: boolean = true;
 
   useEffect(() => {
     const getBalance = async () => {
@@ -88,6 +89,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         return;
       }
 
+      setLoading(true);
       try {
         // Calculate amounts
         let regular_amount =
@@ -169,6 +171,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             setSuccess(
               "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
             );
+            setLoading(false);
           } else {
             throw new Error(
               `Unable to submit bond transaction to API ${response.status}`
@@ -180,10 +183,12 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           setSuccess(
             "Your bond transaction has been signed correctly! Please copy paste the signed bond.toml from the below box, and open a pull request on GitHub yourself following this guide."
           );
+          setLoading(false);
         }
       } catch (e) {
         console.error(e);
         setError(`Unable to sign transaction. ${e}`);
+        setLoading(false);
       }
     },
     [account, validator, amount, tip, automatic]
@@ -274,6 +279,12 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
 
       {error && <Alert type="error">{error}</Alert>}
       {success && <Alert type="success">{success}</Alert>}
+      {loading && (
+        <Alert type="info" className="text-center bg-transparent">
+          <ImSpinner8 className="inline-block w-5 h-5 animate-spin mr-2" />
+          Signing transaction...
+        </Alert>
+      )}
 
       <FormStatus>
         {bonds.length > 0 && (
@@ -308,10 +319,10 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           backgroundHoverColor="yellow"
           textHoverColor="black"
           outlineColor="yellow"
-          className={`max-w-fit ${!isFormValid && "opacity-50"}`}
+          className={`max-w-fit ${loading && "opacity-50"}`}
           color="cyan"
           onClick={handleSubmit}
-          disabled={!isFormValid}
+          disabled={loading}
         >
           Sign Bond
         </ActionButton>
