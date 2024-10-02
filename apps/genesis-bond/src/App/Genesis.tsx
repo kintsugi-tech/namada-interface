@@ -186,8 +186,14 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           setLoading(false);
         }
       } catch (e) {
-        console.error(e);
-        setError(`Unable to sign transaction. ${e}`);
+        if (typeof e === "string") {
+          if (e.includes("does not match Tx header chain_id")) {
+            setError(`CHAIN_ID_MISMATCH`);
+          }
+          setError(`Unable to sign transaction. ${e}`);
+        } else {
+          setError(`Unable to sign transaction. Unknown error`);
+        }
         setLoading(false);
       }
     },
@@ -277,7 +283,23 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         </InputContainer>
       )}
 
-      {error && <Alert type="error">{error}</Alert>}
+      {error && (
+        <Alert type="error">
+          {error === "CHAIN_ID_MISMATCH" ?
+            <>
+              Unable to sign transaction. Please make sure to configure the
+              correct chain id (namada-genesis) in namada extension. Check{" "}
+              <a
+                href="https://namada-genesis.kintsugi-nodes.com/chain-setting.gif"
+                target="_blank"
+              >
+                here
+              </a>{" "}
+              for more info.
+            </>
+          : error}
+        </Alert>
+      )}
       {success && <Alert type="success">{success}</Alert>}
       {loading && (
         <Alert type="info" className="text-center bg-transparent">
