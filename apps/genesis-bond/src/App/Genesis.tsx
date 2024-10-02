@@ -202,11 +202,12 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           setLoading(false);
         }
       } catch (e) {
-        if (typeof e === "string") {
-          if (e.includes("does not match Tx header chain_id")) {
+        if (e instanceof Error) {
+          if (e.message.includes("does not match Tx header chain_id")) {
             setError(`CHAIN_ID_MISMATCH`);
+          } else {
+            setError(`Unable to sign transaction. ${e}`);
           }
-          setError(`Unable to sign transaction. ${e}`);
         } else {
           setError(`Unable to sign transaction. Unknown error`);
         }
@@ -313,6 +314,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
               <a
                 href="https://namada-genesis.kintsugi-nodes.com/chain-setting.gif"
                 target="_blank"
+                className="underline"
               >
                 here
               </a>{" "}
