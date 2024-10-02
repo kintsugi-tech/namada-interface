@@ -48,6 +48,9 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
 
   const [success, setSuccess] = useState<string>();
   const [error, setError] = useState<string>();
+  const [disablingError, setDisablingError] = useState<
+    React.JSX.Element | undefined
+  >();
 
   const accountsSelectData = accounts.map(({ alias, address }) => ({
     label: `${alias} - ${shortenAddress(address)}`,
@@ -60,10 +63,23 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         const res = await fetch(
           `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/balance/${account.address}`
         );
-        const b = (await res.json()) as { balance: string };
 
-        setBalance(parseFloat(b.balance));
+        if (res.ok) {
+          const b = (await res.json()) as { balance: string };
+          setDisablingError(undefined);
+          setBalance(parseFloat(b.balance));
+        } else {
+          if (res.status === 404) {
+            setDisablingError(
+              <>
+                We can't find a genesis balance for this account. Please make
+                sure you claimed your airdrop back in the days.
+              </>
+            );
+          }
+        }
       } catch (e) {
+        console.log("ok");
         console.error(e);
       }
     };
@@ -217,71 +233,76 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         }
       </InputContainer>
 
-      <InputContainer>
-        <Select
-          data={validators}
-          value={validator}
-          label="Validator"
-          onChange={(e) => setValidator(e.target.value)}
-        />
-      </InputContainer>
-
-      <InputContainer>
-        <AmountInput
-          placeholder={`100 NAM`}
-          label="Amount"
-          value={amount === undefined ? undefined : new BigNumber(amount)}
-          min={0}
-          maxDecimalPlaces={3}
-          onChange={(e) => setAmount(e.target.value?.toNumber())}
-          error={amount && amount > balance ? `Insufficient Balance` : ""}
-        />
-        <span className="mt-2 text-white text-xs">
-          Genesis Balance: {balance.toFixed(2)} NAM
-        </span>
-      </InputContainer>
-
-      <InputContainer>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="automatic-check"
-            className="bg-neutral-600 text-yellow-500"
-            checked={automatic}
-            onChange={() => {
-              setAutomatic(!automatic);
-            }}
-          />
-          <label htmlFor={"automatic-check"} className="text-white text-sm">
-            Enable automatic submission of signature (no PR on GitHub needed)
-          </label>
-        </div>
-      </InputContainer>
-
-      {validator !== KINTSUGI_ADDR && (
-        <InputContainer>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="kintsugi-check"
-              className="bg-neutral-600 text-yellow-500"
-              checked={tip}
-              onChange={() => {
-                setTip(!tip);
-              }}
+      {!disablingError ?
+        <>
+          <InputContainer>
+            <Select
+              data={validators}
+              value={validator}
+              label="Validator"
+              onChange={(e) => setValidator(e.target.value)}
             />
-            <label htmlFor={"kintsugi-check"} className="text-white text-sm">
-              Delegate 20% also to{" "}
-              <a
-                href="https://kintsugi.tech"
-                className="underline text-yellow"
-                target="_blank"
-              >
-                Kintsugi Validator
-              </a>{" "}
-              - as a thank for building this interface
-            </label>
-          </div>
-        </InputContainer>
-      )}
+          </InputContainer>
+          <InputContainer>
+            <AmountInput
+              placeholder={`100 NAM`}
+              label="Amount"
+              value={amount === undefined ? undefined : new BigNumber(amount)}
+              min={0}
+              maxDecimalPlaces={3}
+              onChange={(e) => setAmount(e.target.value?.toNumber())}
+              error={amount && amount > balance ? `Insufficient Balance` : ""}
+            />
+            <span className="mt-2 text-white text-xs">
+              Genesis Balance: {balance.toFixed(2)} NAM
+            </span>
+          </InputContainer>
+          <InputContainer>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="automatic-check"
+                className="bg-neutral-600 text-yellow-500"
+                checked={automatic}
+                onChange={() => {
+                  setAutomatic(!automatic);
+                }}
+              />
+              <label htmlFor={"automatic-check"} className="text-white text-sm">
+                Enable automatic submission of signature (no PR on GitHub
+                needed)
+              </label>
+            </div>
+          </InputContainer>
+          {validator !== KINTSUGI_ADDR && (
+            <InputContainer>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="kintsugi-check"
+                  className="bg-neutral-600 text-yellow-500"
+                  checked={tip}
+                  onChange={() => {
+                    setTip(!tip);
+                  }}
+                />
+                <label
+                  htmlFor={"kintsugi-check"}
+                  className="text-white text-sm"
+                >
+                  Delegate 20% also to{" "}
+                  <a
+                    href="https://kintsugi.tech"
+                    className="underline text-yellow"
+                    target="_blank"
+                  >
+                    Kintsugi Validator
+                  </a>{" "}
+                  - as a thank for building this interface
+                </label>
+              </div>
+            </InputContainer>
+          )}{" "}
+        </>
+      : <div className="text-white p-8"> {disablingError}</div>}
 
       {error && (
         <Alert type="error">
@@ -344,7 +365,9 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           className={`max-w-fit ${loading && "opacity-50"}`}
           color="cyan"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={
+            loading || (disablingError !== undefined && disablingError !== null)
+          }
         >
           Sign Bond
         </ActionButton>
