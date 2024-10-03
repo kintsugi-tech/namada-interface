@@ -38,6 +38,10 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   const [account, setAccount] = useState<Account>(accounts[0]);
 
   const [loading, setLoading] = useState(false);
+  const [editingBonds, setEditingBonds] = useState(false);
+  const [previousBonds, setPreviousBonds] = useState<
+    { source: string; validator: string; amount: string }[]
+  >([]);
 
   const [validator, setValidator] = useState<string>(KINTSUGI_ADDR);
   const [amount, setAmount] = useState<number | undefined>(undefined);
@@ -71,10 +75,10 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         } else {
           if (res.status === 404) {
             setDisablingError(
-              <>
+              <p className="p-8">
                 We can't find a genesis balance for this account. Please make
                 sure you claimed your airdrop back in the days.
-              </>
+              </p>
             );
           }
         }
@@ -82,9 +86,36 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         console.log("ok");
         console.error(e);
       }
+
+      setError(undefined);
     };
 
     getBalance();
+  }, [account]);
+
+  useEffect(() => {
+    const checkSubmission = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/bonds/${account.publicKey ?? ""}`
+        );
+
+        if (res.ok) {
+          const bondData = (await res.json()) as {
+            bonds: { source: string; validator: string; amount: string }[];
+          };
+
+          setPreviousBonds(bondData.bonds);
+        } else {
+          setPreviousBonds([]);
+        }
+      } catch (e) {
+        console.log("ok");
+        console.error(e);
+      }
+    };
+
+    checkSubmission();
   }, [account]);
 
   useEffect(() => {
@@ -189,9 +220,17 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             );
             setLoading(false);
           } else {
-            throw new Error(
-              `Unable to submit bond transaction to API ${response.status}`
-            );
+            let errorInfo = await response.json();
+            let errorMessage = "";
+
+            if (errorInfo.errors) {
+              errorMessage = errorInfo.errors.map((e: any) => e.msg).join(", ");
+              throw new Error(`${errorMessage}`);
+            } else {
+              throw new Error(
+                `Unable to submit bond transaction to API ${response.status}`
+              );
+            }
           }
           return;
         } else {
@@ -235,75 +274,92 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
       </InputContainer>
 
       {!disablingError ?
-        <>
-          <InputContainer>
-            <Select
-              data={validators}
-              value={validator}
-              label="Validator"
-              onChange={(e) => setValidator(e.target.value)}
-            />
-          </InputContainer>
-          <InputContainer>
-            <AmountInput
-              placeholder={`100 NAM`}
-              label="Amount"
-              value={amount === undefined ? undefined : new BigNumber(amount)}
-              min={0}
-              maxDecimalPlaces={3}
-              onChange={(e) => setAmount(e.target.value?.toNumber())}
-              error={amount && amount > balance ? `Insufficient Balance` : ""}
-            />
-            <span className="mt-2 text-white text-xs">
-              Genesis Balance: {balance.toFixed(2)} NAM
-            </span>
-          </InputContainer>
-          <InputContainer>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="automatic-check"
-                className="bg-neutral-600 text-yellow-500"
-                checked={automatic}
-                onChange={() => {
-                  setAutomatic(!automatic);
-                }}
+        previousBonds.length == 0 || editingBonds ?
+          <>
+            <InputContainer>
+              <Select
+                data={validators}
+                value={validator}
+                label="Validator"
+                onChange={(e) => setValidator(e.target.value)}
               />
-              <label htmlFor={"automatic-check"} className="text-white text-sm">
-                Enable automatic submission of signature (no PR on GitHub
-                needed)
-              </label>
-            </div>
-          </InputContainer>
-          {validator !== KINTSUGI_ADDR && (
+            </InputContainer>
+            <InputContainer>
+              <AmountInput
+                placeholder={`100 NAM`}
+                label="Amount"
+                value={amount === undefined ? undefined : new BigNumber(amount)}
+                min={0}
+                maxDecimalPlaces={3}
+                onChange={(e) => setAmount(e.target.value?.toNumber())}
+                error={amount && amount > balance ? `Insufficient Balance` : ""}
+              />
+              <span className="mt-2 text-white text-xs">
+                Genesis Balance: {balance.toFixed(2)} NAM
+              </span>
+            </InputContainer>
             <InputContainer>
               <div className="flex items-center gap-2">
                 <Checkbox
-                  id="kintsugi-check"
+                  id="automatic-check"
                   className="bg-neutral-600 text-yellow-500"
-                  checked={tip}
+                  checked={automatic}
                   onChange={() => {
-                    setTip(!tip);
+                    setAutomatic(!automatic);
                   }}
                 />
                 <label
-                  htmlFor={"kintsugi-check"}
+                  htmlFor={"automatic-check"}
                   className="text-white text-sm"
                 >
-                  Delegate 20% also to{" "}
-                  <a
-                    href="https://kintsugi.tech"
-                    className="underline text-yellow"
-                    target="_blank"
-                  >
-                    Kintsugi Validator
-                  </a>{" "}
-                  - as a thank for building this interface
+                  Enable automatic submission of signature (no PR on GitHub
+                  needed)
                 </label>
               </div>
             </InputContainer>
-          )}{" "}
-        </>
-      : <div className="text-white p-8"> {disablingError}</div>}
+            {validator !== KINTSUGI_ADDR && (
+              <InputContainer>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="kintsugi-check"
+                    className="bg-neutral-600 text-yellow-500"
+                    checked={tip}
+                    onChange={() => {
+                      setTip(!tip);
+                    }}
+                  />
+                  <label
+                    htmlFor={"kintsugi-check"}
+                    className="text-white text-sm"
+                  >
+                    Delegate 20% also to{" "}
+                    <a
+                      href="https://kintsugi.tech"
+                      className="underline text-yellow"
+                      target="_blank"
+                    >
+                      Kintsugi Validator
+                    </a>{" "}
+                    - as a thank for building this interface
+                  </label>
+                </div>
+              </InputContainer>
+            )}{" "}
+          </>
+        : <div className="py-4 text-white">
+            It looks like you already submitted a bond! <br /> <br />
+            <b>Current Bonds:</b>
+            {previousBonds.map((b) => {
+              let valName = validators.find((v) => v.value === b.validator);
+              return (
+                <p key={b.source}>
+                  {valName?.label}: {b.amount} NAM
+                </p>
+              );
+            })}
+          </div>
+
+      : <div className="text-white"> {disablingError}</div>}
 
       {error && (
         <Alert type="error">
@@ -366,12 +422,19 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           outlineColor="yellow"
           className={`max-w-fit ${loading && "opacity-50"}`}
           color="cyan"
-          onClick={handleSubmit}
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            if (previousBonds.length > 0 && !editingBonds) {
+              setEditingBonds(true);
+            } else {
+              handleSubmit(e);
+            }
+          }}
           disabled={
             loading || (disablingError !== undefined && disablingError !== null)
           }
         >
-          Sign Bond
+          {previousBonds.length > 0 ? "Edit Bonds" : "Sign Bond"}
         </ActionButton>
       </ButtonContainer>
     </GenesisFormContainer>
