@@ -124,6 +124,17 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     setBonds([]);
   }, [automatic]);
 
+  useEffect(() => {
+    // set validator at page load if default is provided
+    if (typeof window !== "undefined") {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      if (urlParams.has("validator")) {
+        setValidator(urlParams.get("validator")!);
+      }
+    }
+  }, []);
+
   const handleSubmit = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
