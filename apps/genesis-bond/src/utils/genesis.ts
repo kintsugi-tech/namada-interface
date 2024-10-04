@@ -56,11 +56,11 @@ export async function loadValidators(): Promise<
   validators.sort(() => Math.random() - 0.5);
 
   return validators.map((v) => {
+    let alias = v.alias != "Unknown alias" ? v.alias : v.address;
+
     return {
       label:
-        parseFloat(v.commission) > 15 ?
-          v.alias + " ⚠️ High Commission"
-        : v.alias,
+        parseFloat(v.commission) > 15 ? alias + " ⚠️ High Commission" : alias,
       value: v.address,
     };
   });
