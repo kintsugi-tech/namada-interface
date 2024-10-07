@@ -33,10 +33,8 @@ export const Faq: React.FC = () => {
       </FaqDropdown>
       <FaqDropdown title="How Automatic submission works?">
         <Text className="text-black my-0">
-          If you enable Automatic Submission, your bonds will be securely stored
-          in a centralized backend owned by Kintsugi. Every day, {`we'll`}{" "}
-          submit a pull request to the official GitHub repository updating the
-          transactions in your behalf.
+          If you enable Automatic Submission, your bonds will be automatically
+          pushed to the official Namada github.
         </Text>
       </FaqDropdown>
       <FaqDropdown title="What happens if I submit multiple automatic bonds?">
@@ -49,7 +47,7 @@ export const Faq: React.FC = () => {
       <FaqDropdown title="What happens if I submit both an automatic bond here and a regular one on GitHub?">
         <Text className="text-black my-0">
           In case the same delegator address submits both an automatic bond
-          trough Kintsugi and a regular pull request to the official Namada
+          through ValidityOps and a regular pull request to the official Namada
           GitHub repository, the automatic bond will be ignored and not included
           in the genesis block.
         </Text>
@@ -64,8 +62,7 @@ export const Faq: React.FC = () => {
       <FaqDropdown title="Where can i get support?">
         <Text className="text-black my-0">
           <FaqUrl href={namadaDiscord}>{"Join Namada Discord"}</FaqUrl> to share
-          any issues or questions you have relating to this interface. Tag
-          @dimiandre or any Kintsugi member and they will definitely help!
+          any issues or questions you have relating to this interface.
         </Text>
       </FaqDropdown>
     </FaqContainer>

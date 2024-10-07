@@ -47,7 +47,9 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     { source: string; validator: string; amount: string }[]
   >([]);
 
-  const [validator, setValidator] = useState<string>("");
+  const [validator, setValidator] = useState<string>(
+    validatorsSelectValue?.[0]?.value ?? ""
+  );
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [balance, setBalance] = useState<number>(0);
@@ -156,6 +158,15 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         return;
       }
 
+      if (account.chainId !== "namada-genesis") {
+        setError(
+          "Update the Network in the Namada Extension to 'namada-genesis'. See a video at https://namada-genesis.kintsugi-nodes.com/chain-setting.gif"
+        );
+        return;
+      }
+
+      console.log(account, "account");
+
       setLoading(true);
       try {
         // Calculate amounts
@@ -175,6 +186,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           validator: validator,
           amount: new BigNumber(regular_amount),
         });
+        console.log(bondProps, "bond propsss");
 
         txs.push(await getBondTx(tx, bondProps[0], account));
 
@@ -220,7 +232,8 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           });
           i++;
         }
-
+        console.log(bonds, "bonds");
+        debugger;
         if (automatic) {
           // Submit bonds to api
           const response = await fetch(
@@ -300,7 +313,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           <>
             <InputContainer>
               <Select
-                data={validatorsSelectValue ?? [{ label: "", value: "" }]}
+                data={validators ?? [{ label: "", value: "" }]}
                 value={validator}
                 label="Validator"
                 onChange={(e) => setValidator(e.target.value)}
