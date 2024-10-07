@@ -17,16 +17,20 @@ import { Bond, getBondTx, getSdkInstance } from "../utils";
 import { AppContext } from "./App";
 import { ButtonContainer, InputContainer } from "./App.components";
 import { FormStatus, GenesisFormContainer } from "./Genesis.components";
+import { ValidatorData } from "./types";
 
-const KINTSUGI_ADDR = "tnam1qydvhqdu2q2vrgvju2ngpt6yhrehu525pus6m28p";
+const VALIDITY_ADDR = "tnam1q8lhvxys53dlc8wzlg7dyqf9avd0vff6wvav4amt";
 type Props = {
   accounts: Account[];
-  validators: { label: string; value: string }[];
+  validators: ValidatorData[] | null;
 };
 
 export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   const { integration } = useContext(AppContext)!;
-
+  const validatorsSelectValue = validators?.map((v) => ({
+    label: v.alias,
+    value: v.address,
+  }));
   const accountLookup = accounts.reduce(
     (acc, account) => {
       acc[account.address] = account;
@@ -43,7 +47,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     { source: string; validator: string; amount: string }[]
   >([]);
 
-  const [validator, setValidator] = useState<string>(KINTSUGI_ADDR);
+  const [validator, setValidator] = useState<string>(VALIDITY_ADDR);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [balance, setBalance] = useState<number>(0);
@@ -62,28 +66,33 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   }));
 
   useEffect(() => {
-    const getBalance = async () => {
+    const getBalance = async (): Promise<void> => {
       try {
         const res = await fetch(
-          `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/balance/${account.address}`
+          "https://validityops.github.io/namada-bond/balances.json"
         );
 
         if (res.ok) {
-          const b = (await res.json()) as { balance: string };
-          setDisablingError(undefined);
-          setBalance(parseFloat(b.balance));
-        } else {
-          if (res.status === 404) {
+          const balances = (await res.json()) as Record<string, string>;
+
+          // Check if the account address exists in the balances.json
+          if (balances[account.address]) {
+            setDisablingError(undefined);
+            setBalance(parseFloat(balances[account.address]));
+          } else {
+            // If the account address is not found, display an error
             setDisablingError(
               <p className="p-8">
-                We can't find a genesis balance for this account. Please make
-                sure you claimed your airdrop back in the days.
+                We {`can't`} find a genesis balance for this account. Please
+                make sure you claimed your airdrop back in the days.
               </p>
             );
           }
+        } else {
+          // Handle non-200 responses
+          console.error("Failed to fetch balances.json");
         }
       } catch (e) {
-        console.log("ok");
         console.error(e);
       }
 
@@ -94,7 +103,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   }, [account]);
 
   useEffect(() => {
-    const checkSubmission = async () => {
+    const checkSubmission = async (): Promise<void> => {
       try {
         const res = await fetch(
           `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/bonds/${account.publicKey ?? ""}`
@@ -150,15 +159,15 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
       setLoading(true);
       try {
         // Calculate amounts
-        let regular_amount =
+        const regular_amount =
           tip ? BigNumber(Math.ceil(amount * 0.8)) : BigNumber(amount);
-        let tip_amount =
+        const tip_amount =
           tip ? BigNumber(amount).minus(regular_amount) : BigNumber(0);
 
         // Init SDK
-        let { tx } = await getSdkInstance();
+        const { tx } = await getSdkInstance();
         const txs: TxProps[] = [];
-        let bondProps: BondProps[] = [];
+        const bondProps: BondProps[] = [];
 
         // Prepare tx
         bondProps.push({
@@ -173,7 +182,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         if (tip_amount > BigNumber(0)) {
           bondProps.push({
             source: account.address,
-            validator: KINTSUGI_ADDR,
+            validator: VALIDITY_ADDR,
             amount: new BigNumber(tip_amount),
           });
 
@@ -186,9 +195,9 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             "0000000000000000000000000000000000000000000000000000000000000000",
         };
 
-        let signer = integration.signer();
+        const signer = integration.signer();
 
-        let result = await signer?.sign(txs, account.address, checksums);
+        const result = await signer?.sign(txs, account.address, checksums);
 
         if (!result) {
           console.error("No result from signing");
@@ -196,10 +205,10 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           return;
         }
 
-        let bonds: Bond[] = [];
+        const bonds: Bond[] = [];
         let i = 0;
         for (const res of result) {
-          let signResponse = await tx.getTxSignature(
+          const signResponse = await tx.getTxSignature(
             res,
             account.publicKey ?? ""
           );
@@ -231,11 +240,13 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             );
             setLoading(false);
           } else {
-            let errorInfo = await response.json();
+            const errorInfo = await response.json();
             let errorMessage = "";
 
             if (errorInfo.errors) {
-              errorMessage = errorInfo.errors.map((e: any) => e.msg).join(", ");
+              errorMessage = errorInfo.errors
+                .map((e: { msg: string }) => e.msg)
+                .join(", ");
               throw new Error(`${errorMessage}`);
             } else {
               throw new Error(
@@ -289,7 +300,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           <>
             <InputContainer>
               <Select
-                data={validators}
+                data={validatorsSelectValue ?? [{ label: "", value: "" }]}
                 value={validator}
                 label="Validator"
                 onChange={(e) => setValidator(e.target.value)}
@@ -328,7 +339,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
                 </label>
               </div>
             </InputContainer>
-            {validator !== KINTSUGI_ADDR && (
+            {validator !== VALIDITY_ADDR && (
               <InputContainer>
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -345,13 +356,14 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
                   >
                     Delegate 20% also to{" "}
                     <a
-                      href="https://kintsugi.tech"
+                      href="https://validityops.com"
                       className="underline text-yellow"
                       target="_blank"
+                      rel="noreferrer"
                     >
-                      Kintsugi Validator
+                      ValidityOps Validator
                     </a>{" "}
-                    - as a thank for building this interface
+                    - as a thank you for building this interface
                   </label>
                 </div>
               </InputContainer>
@@ -361,7 +373,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             It looks like you already submitted a bond! <br /> <br />
             <b>Current Bonds:</b>
             {previousBonds.map((b) => {
-              let valName = validators.find((v) => v.value === b.validator);
+              const valName = validators?.find((v) => v.value === b.validator);
               return (
                 <p key={b.source}>
                   {valName?.label}: {b.amount} NAM
@@ -382,6 +394,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
                 href="https://namada-genesis.kintsugi-nodes.com/chain-setting.gif"
                 target="_blank"
                 className="underline"
+                rel="noreferrer"
               >
                 here
               </a>{" "}
@@ -407,16 +420,16 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
                 <p key={i}>
                   {i > 0 && <br />}
                   [[bond]] <br />
-                  source = "{bond.source}"
+                  source = {`"${bond.source}"`}
                   <br />
-                  validator = "{bond.validator}" <br />
-                  amount = "{bond.amount.toString()}" <br />
+                  validator = {`"${bond.validator}"`} <br />
+                  amount = {`"${bond.amount.toString()}"`} <br />
                   <br />
                   [bond.signatures]
                   <br />
                   {bond.signatures.map((s) => (
                     <span key={s.pub_key}>
-                      {s.pub_key} = "{s.signature}"
+                      {s.pub_key} = {`"${s.signature}"`}
                     </span>
                   ))}
                 </p>

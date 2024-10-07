@@ -12,9 +12,10 @@ export const Faq: React.FC = () => {
         <Text className="text-black my-0">
           Make sure to have set the correct chain id in the Namada Extension.{" "}
           <br /> <br />
-          You can set it by opening the extension clicking its icon in the top
+          {`You can set it by opening the extension clicking its icon in the top
           bar of your browser, then click the gear settings icon. Select
-          "Network", type "namada-genesis" and press "Submit". <br />
+          "Network", type "namada-genesis" and press "Submit".`}{" "}
+          <br />
           <br /> Here a{" "}
           <a href="/chain-setting.gif" className="underline" target="_blank">
             small video
@@ -26,15 +27,15 @@ export const Faq: React.FC = () => {
         <Text className="text-black my-0">
           This interface allows you to easily sing a pre-bond transaction for
           Namada genesis block. <br /> <br /> Simply connect Namada Extension
-          and set chain-id to "namada-gensis". choose the desired wallet,
+          and set chain-id to {`"namada-gensis".`} choose the desired wallet,
           validator and amount, and click the Sign button.
         </Text>
       </FaqDropdown>
       <FaqDropdown title="How Automatic submission works?">
         <Text className="text-black my-0">
           If you enable Automatic Submission, your bonds will be securely stored
-          in a centralized backend owned by Kintsugi. Every day, we'll submit a
-          pull request to the official GitHub repository updating the
+          in a centralized backend owned by Kintsugi. Every day, {`we'll`}{" "}
+          submit a pull request to the official GitHub repository updating the
           transactions in your behalf.
         </Text>
       </FaqDropdown>

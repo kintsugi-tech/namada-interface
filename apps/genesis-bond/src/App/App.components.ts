@@ -129,7 +129,6 @@ export const ContentContainer = styled.div`
   flex-direction: column;
   justify-content: space-between;
   width: 100%;
-  max-width: 762px;
   padding: 0 20px;
   box-sizing: border-box;
   margin-top: 24px;

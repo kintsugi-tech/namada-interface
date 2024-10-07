@@ -56,7 +56,7 @@ export async function loadValidators(): Promise<
   validators.sort(() => Math.random() - 0.5);
 
   return validators.map((v) => {
-    let alias = v.alias != "Unknown alias" ? v.alias : v.address;
+    const alias = v.alias != "Unknown alias" ? v.alias : v.address;
 
     return {
       label:

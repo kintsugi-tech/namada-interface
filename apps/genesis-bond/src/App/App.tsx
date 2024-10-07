@@ -31,6 +31,7 @@ import { AppHeader, CallToActionCard, CardsContainer, Faq } from "./Common";
 import { GenesisBondForm } from "./Genesis";
 import { SettingsForm } from "./SettingsForm";
 import { DataRow, ValidatorData } from "./types";
+
 type AppContext = {
   setIsModalOpen: (value: boolean) => void;
   integration: Namada;
@@ -52,17 +53,12 @@ export const App: React.FC = () => {
     ExtensionAttachStatus.PendingDetection
   );
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedValidator, setSelectedValidator] = useState<{
-    address: string;
-    alias: string;
-  } | null>(null);
+  const [selectedValidator, setSelectedValidator] =
+    useState<ValidatorData | null>(null);
   const [rows, setRows] = useState<DataRow[]>([]);
   const [isExtensionConnected, setIsExtensionConnected] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [colorMode, _] = useState<ColorMode>(initialColorMode);
-  const [validators, setValidators] = useState<
-    { label: string; value: string }[]
-  >([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [settingsError, setSettingsError] = useState<string>();
@@ -85,6 +81,8 @@ export const App: React.FC = () => {
             const totalVotingPower = validator.total_voting_power;
             const row: DataRow = {
               id: index,
+              label: validator.alias ?? "Alias Unknown",
+              value: validator.address,
               alias: validator.alias ?? "Alias Unknown",
               address: validator.address,
               commission: commissionRate,
@@ -125,15 +123,12 @@ export const App: React.FC = () => {
     [integration]
   );
 
-  const handleRowClick = (params: any) => {
-    setSelectedValidator({
-      address: params.row.address,
-      alias: params.row.alias,
-    });
+  const handleRowClick = (params: any): void => {
+    setSelectedValidator(params.row);
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
+  const handleCloseDialog = (): void => {
     setDialogOpen(false);
     setSelectedValidator(null);
   };
@@ -266,8 +261,49 @@ export const App: React.FC = () => {
             maxWidth="md"
             fullWidth
           >
-            <DialogTitle>{selectedValidator?.alias}</DialogTitle>
+            <DialogTitle>
+              <strong>{selectedValidator?.alias}</strong>
+            </DialogTitle>
             <DialogContent>
+              <>
+                {selectedValidator ?
+                  <div>
+                    <p>
+                      <strong>Address:</strong> {selectedValidator.address}
+                    </p>
+                    <p>
+                      <strong>Commission:</strong>{" "}
+                      {selectedValidator.commission}%
+                    </p>
+                    <p>
+                      <strong>Total Bond:</strong>{" "}
+                      {selectedValidator.total_bond}
+                    </p>
+                    <p>
+                      <strong>Total Voting Power:</strong>{" "}
+                      {selectedValidator.total_voting_power}%
+                    </p>
+                    {selectedValidator.email && (
+                      <p>
+                        <strong>Email:</strong> {selectedValidator.email}
+                      </p>
+                    )}
+                    {selectedValidator.website && (
+                      <p>
+                        <strong>Website:</strong> {selectedValidator.website}
+                      </p>
+                    )}
+                    {selectedValidator.discord_handle && (
+                      <p>
+                        <strong>Discord Handle:</strong>{" "}
+                        {selectedValidator.discord_handle}
+                      </p>
+                    )}
+                    <br />
+                  </div>
+                : <p>No validator selected</p>}
+              </>
+
               <FaucetContainer>
                 {settingsError && (
                   <InfoContainer>
@@ -289,6 +325,7 @@ export const App: React.FC = () => {
                         href="https://namada.net/extension"
                         className="underline font-bold"
                         target="_blank"
+                        rel="noreferrer"
                       >
                         Namada Extension
                       </a>{" "}
@@ -299,7 +336,7 @@ export const App: React.FC = () => {
                 {isExtensionConnected && rows.length > 0 && (
                   <GenesisBondForm
                     accounts={accounts}
-                    validators={validators}
+                    validators={selectedValidator ? [selectedValidator] : []}
                   />
                 )}
 
@@ -321,7 +358,7 @@ export const App: React.FC = () => {
             <TopSection>
               <AppHeader />
             </TopSection>
-            <div style={{ height: "800px", width: "75vw" }}>
+            <div style={{ height: "800px", width: "85vw", margin: "0 auto" }}>
               <DataGrid
                 rows={rows}
                 columns={columns}
@@ -349,7 +386,6 @@ export const App: React.FC = () => {
                     backgroundColor: "white",
                     borderBottom: "1px solid black",
                   },
-                  // Add the following styles to make pagination visible
                   "& .MuiDataGrid-footerContainer": {
                     backgroundColor: "white",
                     color: "black",
@@ -362,10 +398,10 @@ export const App: React.FC = () => {
                     color: "black",
                   },
                   "& .Mui-selected": {
-                    backgroundColor: "rgb(255, 255, 0) !important", // Selected row color
+                    backgroundColor: "rgb(255, 255, 0) !important",
                   },
                   "& .MuiDataGrid-cell:focus, & .MuiDataGrid-row:focus": {
-                    outline: "none", // Remove focus outline
+                    outline: "none",
                   },
                 }}
               />
@@ -393,9 +429,9 @@ export const App: React.FC = () => {
               </CardsContainer>
               <Faq />
               <div className=" mb-16 text-center text-sm text-black">
-                This interface is provided by Everlasting validator as is. It's
-                not "official" and it's not affiliated directly with Namada
-                team. We don't take any responsibility in case your pre-bond
+                This interface is provided by the ValidityOps validator as is.
+                {`It's not "official" and it's not affiliated directly with Namada
+                team. We don't take any responsibility in case your pre-bond`}
                 transactions are not correctly included in the genesis block.
                 Feel free to contact us in case you have any question.
                 <br /> <br />
@@ -404,6 +440,7 @@ export const App: React.FC = () => {
                   href="https://github.com/ValidityOps/namada-interface-genesis-bond"
                   className="underline"
                   target="_blank"
+                  rel="noreferrer"
                 >
                   here
                 </a>
