@@ -14,6 +14,7 @@ import { ImSpinner8 } from "react-icons/im";
 
 import { Bond, getBondTx, getSdkInstance } from "../utils";
 
+import { submitToPRBot } from "utils/prbot";
 import { AppContext } from "./App";
 import { ButtonContainer, InputContainer } from "./App.components";
 import { FormStatus, GenesisFormContainer } from "./Genesis.components";
@@ -158,15 +159,6 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         return;
       }
 
-      if (account.chainId !== "namada-genesis") {
-        setError(
-          "Update the Network in the Namada Extension to 'namada-genesis'. See a video at https://namada-genesis.kintsugi-nodes.com/chain-setting.gif"
-        );
-        return;
-      }
-
-      console.log(account, "account");
-
       setLoading(true);
       try {
         // Calculate amounts
@@ -232,28 +224,18 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           });
           i++;
         }
-        console.log(bonds, "bonds");
-        debugger;
+
         if (automatic) {
           // Submit bonds to api
-          const response = await fetch(
-            `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/submit_bond`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ bonds: bonds }),
-            }
-          );
+          const response = await submitToPRBot(account, bonds);
 
-          if (response.ok) {
+          if (response) {
             setSuccess(
               "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
             );
             setLoading(false);
           } else {
-            const errorInfo = await response.json();
+            const errorInfo = await response?.json();
             let errorMessage = "";
 
             if (errorInfo.errors) {
