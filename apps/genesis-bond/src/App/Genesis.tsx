@@ -47,7 +47,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     { source: string; validator: string; amount: string }[]
   >([]);
 
-  const [validator, setValidator] = useState<string>(VALIDITY_ADDR);
+  const [validator, setValidator] = useState<string>("");
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [balance, setBalance] = useState<number>(0);
