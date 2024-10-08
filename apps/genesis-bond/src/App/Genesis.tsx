@@ -69,65 +69,46 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
   }));
 
   useEffect(() => {
-    const getBalance = async (): Promise<void> => {
+    const checkSubmission = async (): Promise<void> => {
       try {
-        const res = await fetch(
-          "https://validityops.github.io/namada-bond/balances.json"
+        const response = await fetch(
+          "https://validityops.github.io/namada-bond/combined_bond_data.json"
         );
 
-        if (res.ok) {
-          const balances = (await res.json()) as Record<string, string>;
+        if (response) {
+          const bondData = (await response.json()) as Array<{
+            source: string;
+            validator: string;
+            amount: string;
+            signatures: Record<string, string>;
+          }>;
 
-          // Check if the account address exists in the balances.json
-          if (balances[account.address]) {
-            setDisablingError(undefined);
-            setBalance(parseFloat(balances[account.address]));
-          } else {
-            // If the account address is not found, display an error
-            setDisablingError(
-              <p className="p-8">
-                We {`can't`} find a genesis balance for this account. Please
-                make sure you claimed your airdrop back in the days.
-              </p>
-            );
-          }
+          // Filter bonds where the source matches the account address
+          const userBonds = bondData.filter(
+            (bond) => bond.source === account.address
+          );
+
+          setDisablingError(undefined);
+          setBalance(parseFloat(userBonds[0].amount));
         } else {
-          // Handle non-200 responses
-          console.error("Failed to fetch balances.json");
+          // If the account address is not found, display an error
+          setDisablingError(
+            <p className="p-8">
+              We {`can't`} find a genesis balance for this account. Please make
+              sure you claimed your airdrop back in the days.
+            </p>
+          );
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error fetching bond data:", e);
+        setPreviousBonds([]);
       }
-
       setError(undefined);
     };
 
-    getBalance();
-  }, [account]);
-
-  useEffect(() => {
-    const checkSubmission = async (): Promise<void> => {
-      try {
-        const res = await fetch(
-          `${process.env.NAMADA_INTERFACE_GENESIS_API_URL ?? "http://127.0.0.1:3000"}/bonds/${account.publicKey ?? ""}`
-        );
-
-        if (res.ok) {
-          const bondData = (await res.json()) as {
-            bonds: { source: string; validator: string; amount: string }[];
-          };
-
-          setPreviousBonds(bondData.bonds);
-        } else {
-          setPreviousBonds([]);
-        }
-      } catch (e) {
-        console.log("ok");
-        console.error(e);
-      }
-    };
-
-    checkSubmission();
+    if (account && account.address) {
+      checkSubmission();
+    }
   }, [account]);
 
   useEffect(() => {
