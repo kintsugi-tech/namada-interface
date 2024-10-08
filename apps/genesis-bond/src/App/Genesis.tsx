@@ -209,7 +209,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
         if (automatic) {
           // Submit bonds to api
           try {
-            const response = await submitToPRBot(account, bonds, discordHandle);
+            const response = await submitToPRBot(bonds, discordHandle);
 
             if (response) {
               setSuccess(

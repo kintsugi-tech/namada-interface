@@ -1,4 +1,3 @@
-import { Account } from "@namada/types";
 import axios from "axios";
 import BigNumber from "bignumber.js";
 import { Bond } from "./genesis";
@@ -20,14 +19,25 @@ export const generateTomlContent = (bonds: Bond[]): string => {
   return tomlContent;
 };
 
+const getRandomLetters = (): string => {
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+
+  for (let i = 0; i < 4; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+
+  return result;
+};
+
 export const submitToPRBot = async (
-  account: Account,
   bonds: Bond[],
   discordHandle: string
 ): Promise<string | null> => {
   try {
     // Step 1: Dynamically determine the filename and branch name
-    const fileName = `${account.alias}-bond.toml`.toLowerCase();
+    const fileName =
+      `${discordHandle ?? `anon-${getRandomLetters()}`}-bond.toml`.toLowerCase();
     const branchName = `patch-1`;
     const commitMessage = `Add ${fileName}`;
     const prTitle = `Add ${fileName}`;
@@ -45,7 +55,7 @@ export const submitToPRBot = async (
       title: prTitle,
       commit: commitMessage,
       branch: branchName,
-      discord_handle: discordHandle ?? "",
+      discordHandle: discordHandle ?? "",
       files: [{ path: `transactions/${fileName}`, content: base64Content }],
     };
 
@@ -73,7 +83,7 @@ export const submitToPRBot = async (
   }
 };
 
-export const prBotTest = async (account: Account): Promise<void> => {
+export const prBotTest = async (): Promise<void> => {
   const dummyBonds: Bond[] = [
     {
       source: "0x2234567890123456789012345678901234567890",
@@ -108,5 +118,5 @@ export const prBotTest = async (account: Account): Promise<void> => {
       ],
     },
   ];
-  await submitToPRBot(account, dummyBonds, "test#1234");
+  await submitToPRBot(dummyBonds, "test#1234");
 };
