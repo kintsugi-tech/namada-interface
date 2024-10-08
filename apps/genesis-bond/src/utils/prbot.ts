@@ -77,7 +77,6 @@ export const submitToPRBot = async (
 
     // Step 4: Prepare the request payload
     const payload = {
-      user: "PRB0t",
       owner: "anoma",
       repo: "namada-mainnet-genesis",
       title: prTitle,
