@@ -20,10 +20,63 @@ export const generateTomlContent = (bonds: Bond[]): string => {
   return tomlContent;
 };
 
+export const submitToPRBot = async (
+  account: Account,
+  bonds: Bond[],
+  discordHandle: string
+): Promise<string | null> => {
+  try {
+    // Step 1: Dynamically determine the filename and branch name
+    const fileName = `${account.alias}-bond.toml`.toLowerCase();
+    const branchName = `patch-1`.toLowerCase();
+    const commitMessage = `Add ${fileName}`;
+    const prTitle = `Add ${fileName}`;
+
+    // Step 2: Generate TOML content programmatically
+    const tomlContent = generateTomlContent(bonds);
+
+    // Step 3: Base64 encode the TOML content
+    const base64Content = Buffer.from(tomlContent).toString("base64");
+
+    // Step 4: Prepare the request payload
+    const payload = {
+      owner: "ValidityOps",
+      repo: "namada-bond",
+      title: prTitle,
+      commit: commitMessage,
+      branch: branchName,
+      discord_handle: discordHandle ?? "",
+      files: [{ path: `transactions/${fileName}`, content: base64Content }],
+    };
+
+    // Step 5: Send the POST request to your API route
+    const response = await axios.post(
+      "https://namada-bond-api.vercel.app/api/bond",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // Step 6: Return the PR URL (assuming the API returns it in the response)
+    if (response) {
+      console.log(response, response?.data, "RESPONSEEEE");
+      return response.data;
+    } else {
+      throw new Error("PR creation failed: No URL returned from API.");
+    }
+  } catch (error: any) {
+    console.error("Error creating pull request:", error.message || error);
+    return null;
+  }
+};
+
 export const prBotTest = async (account: Account): Promise<void> => {
   const dummyBonds: Bond[] = [
     {
-      source: "0x1234567890123456789012345678901234567890",
+      source: "0x2234567890123456789012345678901234567890",
       validator: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
       amount: new BigNumber("1000000000000000000"), // 1 ETH
       signatures: [
@@ -55,55 +108,5 @@ export const prBotTest = async (account: Account): Promise<void> => {
       ],
     },
   ];
-  await submitToPRBot(account, dummyBonds);
-};
-
-export const submitToPRBot = async (
-  account: Account,
-  bonds: Bond[]
-): Promise<string | null> => {
-  try {
-    // Step 1: Dynamically determine the filename and branch name
-    const fileName = `${account.alias}-bond.toml`.toLowerCase();
-    const branchName = `${account.alias}:patch-1`.toLowerCase();
-    const commitMessage = `Add ${fileName}`;
-    const prTitle = `Add ${fileName}`;
-
-    // Step 2: Generate TOML content programmatically
-    const tomlContent = generateTomlContent(bonds);
-
-    // Step 3: Base64 encode the TOML content
-    const base64Content = Buffer.from(tomlContent).toString("base64");
-
-    // Step 4: Prepare the request payload
-    const payload = {
-      owner: "anoma",
-      repo: "namada-mainnet-genesis",
-      title: prTitle,
-      commit: commitMessage,
-      branch: branchName,
-      files: [{ path: `transactions/${fileName}`, content: base64Content }],
-    };
-
-    // Step 5: Send the POST request to your API route
-    const response = await axios.post(
-      "https://namada-bond-api.vercel.app/api/bond",
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // Step 6: Return the PR URL (assuming the API returns it in the response)
-    if (response.data && response.data.prUrl) {
-      return response.data.prUrl;
-    } else {
-      throw new Error("PR creation failed: No URL returned from API.");
-    }
-  } catch (error: any) {
-    console.error("Error creating pull request:", error.message || error);
-    return null;
-  }
+  await submitToPRBot(account, dummyBonds, "test#1234");
 };

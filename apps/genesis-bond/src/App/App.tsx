@@ -257,13 +257,15 @@ export const App: React.FC = () => {
         <GlobalStyles colorMode={colorMode} />
         <BackgroundImage imageUrl={dotsBackground} />
         <AppContainer>
-          <Button
-            sx={{ height: 100, width: 100 }}
-            variant="contained"
-            onClick={() => prBotTest(accounts[0])}
-          >
-            Test PR Bot
-          </Button>
+          {process.env.NODE_ENV === "development" && (
+            <Button
+              sx={{ height: 100, width: 100 }}
+              variant="contained"
+              onClick={() => prBotTest(accounts[0])}
+            >
+              Test PR Bot
+            </Button>
+          )}
           <Dialog
             open={dialogOpen}
             onClose={handleCloseDialog}
