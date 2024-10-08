@@ -63,42 +63,45 @@ export const submitToPRBot = async (
   bonds: Bond[]
 ): Promise<string | null> => {
   try {
+    // Step 1: Dynamically determine the filename and branch name
     const fileName = `${account.alias}-bond.toml`.toLowerCase();
-    const branchName = `bond-${account.alias.toLowerCase().slice(0, 8)}`;
+    const branchName = `${account.alias}:patch-1`.toLowerCase();
     const commitMessage = `Add ${fileName}`;
-    const prTitle = `Add bond for ${account.alias}`;
+    const prTitle = `Add ${fileName}`;
 
+    // Step 2: Generate TOML content programmatically
     const tomlContent = generateTomlContent(bonds);
+
+    // Step 3: Base64 encode the TOML content
     const base64Content = Buffer.from(tomlContent).toString("base64");
 
+    // Step 4: Prepare the request payload
     const payload = {
       user: "PRB0t",
       owner: "anoma",
       repo: "namada-mainnet-genesis",
-      description: "🤖 Adding bond file",
       title: prTitle,
       commit: commitMessage,
       branch: branchName,
       files: [{ path: `transactions/${fileName}`, content: base64Content }],
     };
 
-    // Use a CORS proxy
-    const corsProxy = "https://cors-anywhere.herokuapp.com/";
-    const prb0tApiUrl =
-      "https://xrbhog4g8g.execute-api.eu-west-2.amazonaws.com/prod/prb0t";
-    const proxyUrl = corsProxy + prb0tApiUrl;
+    // Step 5: Send the POST request to your API route
+    const response = await axios.post(
+      "https://namada-bond-api.vercel.app/api/bond",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    const response = await axios.post(proxyUrl, payload, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-Requested-With": "XMLHttpRequest", // Required by some CORS proxies
-      },
-    });
-
-    if (response.data && response.data.url) {
-      return response.data.url;
+    // Step 6: Return the PR URL (assuming the API returns it in the response)
+    if (response.data && response.data.prUrl) {
+      return response.data.prUrl;
     } else {
-      throw new Error("PR creation failed: No URL returned from PRB0t.");
+      throw new Error("PR creation failed: No URL returned from API.");
     }
   } catch (error: any) {
     console.error("Error creating pull request:", error.message || error);
