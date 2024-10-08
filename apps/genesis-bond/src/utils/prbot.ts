@@ -28,7 +28,7 @@ export const submitToPRBot = async (
   try {
     // Step 1: Dynamically determine the filename and branch name
     const fileName = `${account.alias}-bond.toml`.toLowerCase();
-    const branchName = `patch-1`.toLowerCase();
+    const branchName = `patch-1`;
     const commitMessage = `Add ${fileName}`;
     const prTitle = `Add ${fileName}`;
 
