@@ -227,27 +227,21 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
 
         if (automatic) {
           // Submit bonds to api
-          const response = await submitToPRBot(account, bonds);
+          try {
+            const response = await submitToPRBot(account, bonds);
 
-          if (response) {
-            setSuccess(
-              "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
-            );
-            setLoading(false);
-          } else {
-            const errorInfo = await response?.json();
-            let errorMessage = "";
-
-            if (errorInfo.errors) {
-              errorMessage = errorInfo.errors
-                .map((e: { msg: string }) => e.msg)
-                .join(", ");
-              throw new Error(`${errorMessage}`);
-            } else {
-              throw new Error(
-                `Unable to submit bond transaction to API ${response.status}`
+            if (response) {
+              setSuccess(
+                "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
               );
+              setLoading(false);
+            } else {
+              throw new Error("Unable to submit bond transaction");
             }
+          } catch (error: any) {
+            console.error("Error submitting bonds:", error.message || error);
+            setError(error.message || error);
+            setLoading(false);
           }
           return;
         } else {

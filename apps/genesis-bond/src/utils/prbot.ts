@@ -1,5 +1,6 @@
 import { Account } from "@namada/types";
-import { PullRequest } from "@prb0t/pr";
+import axios from "axios";
+import BigNumber from "bignumber.js";
 import { Bond } from "./genesis";
 
 // Helper function to generate TOML content from Bond objects
@@ -19,52 +20,83 @@ export const generateTomlContent = (bonds: Bond[]): string => {
   return tomlContent;
 };
 
-// Function to create and send the PR using PRB0t's NPM package
+export const prBotTest = async (account: Account): Promise<void> => {
+  const dummyBonds: Bond[] = [
+    {
+      source: "0x1234567890123456789012345678901234567890",
+      validator: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      amount: new BigNumber("1000000000000000000"), // 1 ETH
+      signatures: [
+        {
+          pub_key:
+            "0x02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc",
+          signature:
+            "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505c6a474fd03ec7d5542e2ae9c3b508e0a14946352c30384523e3923c0c59137",
+        },
+        {
+          pub_key:
+            "0x03fdd57adec3d438ea237fe46b33ee1e016eda6b585c3e27ea66686c2ea5358479",
+          signature:
+            "0x1c9efde8d13acca85d692876adb9c8e6b5ca408315f4bb82e13aee1bf4e8ffe9c78ad5b4e5e02dbc01f3f16aaa04a6b3fcd1f0e3581802d61e83e5ffa72987",
+        },
+      ],
+    },
+    {
+      source: "0x2345678901234567890123456789012345678901",
+      validator: "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde",
+      amount: new BigNumber("500000000000000000"), // 0.5 ETH
+      signatures: [
+        {
+          pub_key:
+            "0x026e0d6a9f0f9eca9f5c0fb1262f1a5f69b23e56d7fb1a61c46af6ec03d9b1c8d8",
+          signature:
+            "0x1c22b97b77e5a93e9e2c9aca2c2f7d995a6f78f6ae3c4a8cfe6885bfa86342b23d8d975481c2e0aa91e6a5e2c6a66f4c1eedce2edb89f1adcf6e579e1f463e",
+        },
+      ],
+    },
+  ];
+  await submitToPRBot(account, dummyBonds);
+};
+
 export const submitToPRBot = async (
   account: Account,
   bonds: Bond[]
 ): Promise<string | null> => {
   try {
-    // Step 1: Dynamically determine the filename and branch name
-    const fileName = `${account.alias}-bond.toml`.toLowerCase(); // Ensure filename is lowercase
-    const branchName = `${account.alias}:patch-1`.toLowerCase();
+    const fileName = `${account.alias}-bond.toml`.toLowerCase();
+    const branchName = `bond-${account.alias.toLowerCase().slice(0, 8)}`;
     const commitMessage = `Add ${fileName}`;
-    const prTitle = `Add ${fileName}`;
+    const prTitle = `Add bond for ${account.alias}`;
 
-    // Step 2: Generate TOML content programmatically
     const tomlContent = generateTomlContent(bonds);
-
-    // Step 3: Base64 encode the TOML content (GitHub requires Base64 encoded content)
     const base64Content = Buffer.from(tomlContent).toString("base64");
 
-    // Step 4: Initialize PRB0t's PR object
-    const pr = PullRequest(
-      "anoma", // Replace with the repo owner (e.g., 'anoma')
-      "namada-mainnet-genesis", // Replace with the repo name
-      branchName, // The branch you want to create for the PR
-      "" // PRB0t does not require a token in this context
-    );
+    const payload = {
+      user: "PRB0t",
+      owner: "anoma",
+      repo: "namada-mainnet-genesis",
+      description: "🤖 Adding bond file",
+      title: prTitle,
+      commit: commitMessage,
+      branch: branchName,
+      files: [{ path: `transactions/${fileName}`, content: base64Content }],
+    };
 
-    // Step 5: Configure the PR details
-    pr.configure(
-      [{ path: `transactions/${fileName}`, content: base64Content }], // File path and content
-      commitMessage, // Commit message
-      prTitle, // PR title
-      "", // PR description
-      [
-        {
-          name: "PRB0t", // Author name
-          email: "34620110+PRB0t@users.noreply.github.com", // Author email
-        },
-      ]
-    );
+    // Use a CORS proxy
+    const corsProxy = "https://cors-anywhere.herokuapp.com/";
+    const prb0tApiUrl =
+      "https://xrbhog4g8g.execute-api.eu-west-2.amazonaws.com/prod/prb0t";
+    const proxyUrl = corsProxy + prb0tApiUrl;
 
-    // Step 6: Send the PR request
-    const data = await pr.send();
+    const response = await axios.post(proxyUrl, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest", // Required by some CORS proxies
+      },
+    });
 
-    // Step 7: Return the PR creation result
-    if (data && data.url) {
-      return data.url;
+    if (response.data && response.data.url) {
+      return response.data.url;
     } else {
       throw new Error("PR creation failed: No URL returned from PRB0t.");
     }

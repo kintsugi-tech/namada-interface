@@ -1,6 +1,7 @@
 import EmailIcon from "@mui/icons-material/Email";
 import LanguageIcon from "@mui/icons-material/Language";
 import {
+  Button,
   Dialog,
   DialogActions,
   DialogContent,
@@ -26,6 +27,7 @@ import {
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import { FaDiscord } from "react-icons/fa";
 import { ThemeProvider } from "styled-components";
+import { prBotTest } from "utils/prbot";
 import dotsBackground from "../../public/bg-dots.svg";
 import { AppHeader, CallToActionCard, CardsContainer, Faq } from "./Common";
 import { GenesisBondForm } from "./Genesis";
@@ -243,7 +245,7 @@ export const App: React.FC = () => {
       width: 100,
     },
   ];
-
+  console.log(accounts, "accountsss");
   return (
     <AppContext.Provider
       value={{
@@ -255,6 +257,13 @@ export const App: React.FC = () => {
         <GlobalStyles colorMode={colorMode} />
         <BackgroundImage imageUrl={dotsBackground} />
         <AppContainer>
+          <Button
+            sx={{ height: 100, width: 100 }}
+            variant="contained"
+            onClick={() => prBotTest(accounts[0])}
+          >
+            Test PR Bot
+          </Button>
           <Dialog
             open={dialogOpen}
             onClose={handleCloseDialog}
