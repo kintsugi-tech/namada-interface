@@ -55,15 +55,24 @@ export async function loadValidators(): Promise<
   // shuffle validators
   validators.sort(() => Math.random() - 0.5);
 
-  return validators.map((v) => {
-    let alias = v.alias != "Unknown alias" ? v.alias : v.address;
+  // undefined validator
+  let firstValidator = {
+    label: "Select a validator",
+    value: "",
+  };
 
-    return {
-      label:
-        parseFloat(v.commission) > 15 ? alias + " ⚠️ High Commission" : alias,
-      value: v.address,
-    };
-  });
+  return [
+    firstValidator,
+    ...validators.map((v) => {
+      let alias = v.alias != "Unknown alias" ? v.alias : v.address;
+
+      return {
+        label:
+          parseFloat(v.commission) > 15 ? alias + " ⚠️ High Commission" : alias,
+        value: v.address,
+      };
+    }),
+  ];
 }
 
 export async function getBondTx(

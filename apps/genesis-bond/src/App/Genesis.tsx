@@ -43,7 +43,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
     { source: string; validator: string; amount: string }[]
   >([]);
 
-  const [validator, setValidator] = useState<string>(KINTSUGI_ADDR);
+  const [validator, setValidator] = useState<string>("");
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [balance, setBalance] = useState<number>(0);
@@ -141,9 +141,14 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
       setError(undefined);
       setSuccess(undefined);
 
-      if (!account || !validator || !amount) {
+      if (!account || !amount) {
         console.log(account, validator, amount);
         setError("Please provide the required values!");
+        return;
+      }
+
+      if (!validator || validator == "") {
+        setError("Please select a validator!");
         return;
       }
 
