@@ -25,12 +25,14 @@ type Props = {
   accounts: Account[];
   validators: ValidatorData[] | null;
   allValidators: DataRow[];
+  onValidatorChange: (validator: ValidatorData) => void; // <-- New prop
 };
 
 export const GenesisBondForm: React.FC<Props> = ({
   accounts,
   validators,
   allValidators,
+  onValidatorChange,
 }) => {
   const { integration } = useContext(AppContext)!;
   const validatorsSelectValue = validators?.map((v) => ({
@@ -72,6 +74,16 @@ export const GenesisBondForm: React.FC<Props> = ({
     label: `${alias} - ${shortenAddress(address)}`,
     value: address,
   }));
+
+  const handleValidatorChange = (newValidatorAddress: string) => {
+    setValidator(newValidatorAddress);
+    const selectedValidator = allValidators.find(
+      (v) => v.value === newValidatorAddress
+    );
+    if (selectedValidator) {
+      onValidatorChange(selectedValidator as any); // <-- Notify parent of the change
+    }
+  };
 
   useEffect(() => {
     const checkSubmission = async (): Promise<void> => {
@@ -276,7 +288,7 @@ export const GenesisBondForm: React.FC<Props> = ({
                 data={allValidators}
                 value={validator}
                 label="Validator"
-                onChange={(e) => setValidator(e.target.value)}
+                onChange={(e) => handleValidatorChange(e.target.value)}
               />
             </InputContainer>
             <InputContainer>

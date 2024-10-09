@@ -1,5 +1,7 @@
+import { Star } from "@mui/icons-material";
 import EmailIcon from "@mui/icons-material/Email";
 import LanguageIcon from "@mui/icons-material/Language";
+
 import {
   Button,
   Dialog,
@@ -7,7 +9,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridSortCellParams } from "@mui/x-data-grid";
 import { chains } from "@namada/chains";
 import { ActionButton, Alert, Modal } from "@namada/components";
 import { useUntil } from "@namada/hooks";
@@ -46,6 +48,8 @@ enum ExtensionAttachStatus {
   NotInstalled,
   Installed,
 }
+
+const VALIDITY_ADDR = "tnam1q8lhvxys53dlc8wzlg7dyqf9avd0vff6wvav4amt";
 
 export const App: React.FC = () => {
   const initialColorMode = "dark";
@@ -106,7 +110,14 @@ export const App: React.FC = () => {
           }
         );
 
-        setRows(mappedRows);
+        // Ensure VALIDITY_ADDR validator is at the top
+        const sortedRows = mappedRows.sort((a, b) =>
+          a.address === VALIDITY_ADDR ? -1
+          : b.address === VALIDITY_ADDR ? 1
+          : 0
+        );
+
+        setRows(sortedRows);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -114,7 +125,6 @@ export const App: React.FC = () => {
 
     if (rows.length === 0) fetchData();
   }, [rows.length]);
-
   useUntil(
     {
       predFn: async () => Promise.resolve(integration.detect()),
@@ -160,13 +170,77 @@ export const App: React.FC = () => {
     }
   }, [integration]);
 
+  // Helper function to get row data by ID
+  const getRowById = (id: any, api: any) => {
+    return api.getRow(id);
+  };
+
   const columns: GridColDef[] = [
-    { field: "alias", headerName: "Name", flex: 1 },
+    {
+      field: "alias",
+      headerName: "Name",
+      flex: 1,
+      renderCell: (params) => (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {params.row.address === VALIDITY_ADDR && (
+            <Star sx={{ color: "gold", marginRight: "8px" }} />
+          )}
+          {params.value}
+        </div>
+      ),
+      sortComparator: (
+        v1,
+        v2,
+        param1: GridSortCellParams<any>,
+        param2: GridSortCellParams<any>
+      ) => {
+        const row1 = getRowById(param1.id, param1.api);
+        const row2 = getRowById(param2.id, param2.api);
+
+        // Check if the sort is descending
+        const isDescending =
+          param1.api.state.sorting.sortModel[0].sort === "desc";
+
+        if (row1.address === VALIDITY_ADDR && row2.address !== VALIDITY_ADDR) {
+          return isDescending ? 1 : -1;
+        } else if (
+          row2.address === VALIDITY_ADDR &&
+          row1.address !== VALIDITY_ADDR
+        ) {
+          return isDescending ? -1 : 1;
+        }
+
+        return v1.localeCompare(v2);
+      },
+    },
     {
       field: "address",
       headerName: "Address",
       flex: 1,
       valueFormatter: (params: string) => shortenAddress(params),
+      sortComparator: (
+        v1,
+        v2,
+        param1: GridSortCellParams<any>,
+        param2: GridSortCellParams<any>
+      ) => {
+        const row1 = getRowById(param1.id, param1.api);
+        const row2 = getRowById(param2.id, param2.api);
+
+        const isDescending =
+          param1.api.state.sorting.sortModel[0].sort === "desc";
+
+        if (row1.address === VALIDITY_ADDR && row2.address !== VALIDITY_ADDR) {
+          return isDescending ? 1 : -1;
+        } else if (
+          row2.address === VALIDITY_ADDR &&
+          row1.address !== VALIDITY_ADDR
+        ) {
+          return isDescending ? -1 : 1;
+        }
+
+        return v1.localeCompare(v2);
+      },
     },
     {
       field: "commission",
@@ -178,6 +252,29 @@ export const App: React.FC = () => {
       align: "right",
       valueFormatter: (params: number) => {
         return `${params.toFixed(2)}%`;
+      },
+      sortComparator: (
+        v1,
+        v2,
+        param1: GridSortCellParams<any>,
+        param2: GridSortCellParams<any>
+      ) => {
+        const row1 = getRowById(param1.id, param1.api);
+        const row2 = getRowById(param2.id, param2.api);
+
+        const isDescending =
+          param1.api.state.sorting.sortModel[0].sort === "desc";
+
+        if (row1.address === VALIDITY_ADDR && row2.address !== VALIDITY_ADDR) {
+          return isDescending ? 1 : -1;
+        } else if (
+          row2.address === VALIDITY_ADDR &&
+          row1.address !== VALIDITY_ADDR
+        ) {
+          return isDescending ? -1 : 1;
+        }
+
+        return v1 - v2;
       },
     },
     {
@@ -191,6 +288,29 @@ export const App: React.FC = () => {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         }),
+      sortComparator: (
+        v1,
+        v2,
+        param1: GridSortCellParams<any>,
+        param2: GridSortCellParams<any>
+      ) => {
+        const row1 = getRowById(param1.id, param1.api);
+        const row2 = getRowById(param2.id, param2.api);
+
+        const isDescending =
+          param1.api.state.sorting.sortModel[0].sort === "desc";
+
+        if (row1.address === VALIDITY_ADDR && row2.address !== VALIDITY_ADDR) {
+          return isDescending ? 1 : -1;
+        } else if (
+          row2.address === VALIDITY_ADDR &&
+          row1.address !== VALIDITY_ADDR
+        ) {
+          return isDescending ? -1 : 1;
+        }
+
+        return v1 - v2;
+      },
     },
     {
       field: "total_voting_power",
@@ -199,18 +319,35 @@ export const App: React.FC = () => {
       flex: 1,
       width: 150,
       valueFormatter: (params: number) => `${params}%`,
+      sortComparator: (
+        v1,
+        v2,
+        param1: GridSortCellParams<any>,
+        param2: GridSortCellParams<any>
+      ) => {
+        const row1 = getRowById(param1.id, param1.api);
+        const row2 = getRowById(param2.id, param2.api);
+
+        const isDescending =
+          param1.api.state.sorting.sortModel[0].sort === "desc";
+
+        if (row1.address === VALIDITY_ADDR && row2.address !== VALIDITY_ADDR) {
+          return isDescending ? 1 : -1;
+        } else if (
+          row2.address === VALIDITY_ADDR &&
+          row1.address !== VALIDITY_ADDR
+        ) {
+          return isDescending ? -1 : 1;
+        }
+
+        return v1 - v2;
+      },
     },
     {
       field: "contact",
       headerName: "",
       renderCell: (params) => (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           {params.row.email && (
             <a
               href={`mailto:${params.row.email}`}
@@ -249,6 +386,7 @@ export const App: React.FC = () => {
       width: 100,
     },
   ];
+
   return (
     <AppContext.Provider
       value={{
@@ -352,6 +490,7 @@ export const App: React.FC = () => {
                     accounts={accounts}
                     validators={selectedValidator ? [selectedValidator] : []}
                     allValidators={rows}
+                    onValidatorChange={setSelectedValidator}
                   />
                 )}
 
