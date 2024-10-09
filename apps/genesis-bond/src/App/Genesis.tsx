@@ -92,7 +92,6 @@ export const GenesisBondForm: React.FC<Props> = ({
           const userBonds = bondData.filter(
             (bond) => bond.source === account.publicKey
           );
-          console.log(bondData, "user bonds");
           setPreviousBonds(userBonds);
           setDisablingError(undefined);
           setBalance(parseFloat(userBonds[0].amount));
@@ -141,7 +140,6 @@ export const GenesisBondForm: React.FC<Props> = ({
       setSuccess(undefined);
 
       if (!account || !validator || !amount) {
-        console.log(account, validator, amount);
         setError("Please provide the required values!");
         return;
       }
@@ -165,7 +163,6 @@ export const GenesisBondForm: React.FC<Props> = ({
           validator: validator,
           amount: new BigNumber(regular_amount),
         });
-        console.log(bondProps, "bond propsss");
 
         txs.push(await getBondTx(tx, bondProps[0], account));
 
@@ -363,7 +360,6 @@ export const GenesisBondForm: React.FC<Props> = ({
             It looks like you already submitted a bond! <br /> <br />
             <b>Current Bonds:</b>
             {previousBonds.map((b) => {
-              console.log(validators, "test validators");
               const valName = allValidators?.find(
                 (v) => v.value === b.validator
               );

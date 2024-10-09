@@ -249,7 +249,6 @@ export const App: React.FC = () => {
       width: 100,
     },
   ];
-  console.log(accounts, "accountsss");
   return (
     <AppContext.Provider
       value={{
