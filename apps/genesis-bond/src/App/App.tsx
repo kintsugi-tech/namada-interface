@@ -76,6 +76,7 @@ export const App: React.FC = () => {
           throw new Error("Failed to fetch data");
         }
         const data: ValidatorData[] = await res.json();
+
         const mappedRows = data.map(
           (validator: ValidatorData, index: number) => {
             const commissionRate = parseFloat(validator.commission);
@@ -83,7 +84,10 @@ export const App: React.FC = () => {
             const totalVotingPower = validator.total_voting_power;
             const row: DataRow = {
               id: index,
-              label: validator.alias ?? "Alias Unknown",
+              label:
+                validator.alias ?
+                  `${validator.alias} - ${validator.address}`
+                : "Alias Unknown",
               value: validator.address,
               alias: validator.alias ?? "Alias Unknown",
               address: validator.address,
@@ -348,6 +352,7 @@ export const App: React.FC = () => {
                   <GenesisBondForm
                     accounts={accounts}
                     validators={selectedValidator ? [selectedValidator] : []}
+                    allValidators={rows}
                   />
                 )}
 
@@ -439,8 +444,8 @@ export const App: React.FC = () => {
                 />
               </CardsContainer>
               <Faq />
-              <div className=" mb-16 text-center text-sm text-black">
-                This interface is provided by the ValidityOps validator as is.
+              <div className="mb-16 text-center text-sm text-black">
+                This interface is provided by the ValidityOps validator as is.{" "}
                 {`It's not "official" and it's not affiliated directly with Namada
                 team. We don't take any responsibility in case your pre-bond`}
                 transactions are not correctly included in the genesis block.
@@ -455,9 +460,32 @@ export const App: React.FC = () => {
                 >
                   here
                 </a>
-                , along with all the namada-web-sdk modifications that we had to
-                do to make this work.
+                , along with all the namada-web-sdk modifications that{" "}
+                <a
+                  href="https://twitter.com/kintsugi_tech"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  Kintsugi Tech
+                </a>{" "}
+                had to do to make this work.
+                <br />
+                <br />
+                <strong>
+                  We would *NOT* have been able to do this without the help of{" "}
+                  <a
+                    href="https://twitter.com/kintsugi_tech"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline"
+                  >
+                    Kintsugi Tech
+                  </a>{" "}
+                  and we are extremely grateful for their heavy lifting.
+                </strong>
               </div>
+              <div className="text-center font-bold mb-16 text-sm text-black"></div>
             </BottomSection>
           </ContentContainer>
         </AppContainer>

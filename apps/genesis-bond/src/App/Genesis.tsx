@@ -18,15 +18,20 @@ import { submitToPRBot } from "utils/prbot";
 import { AppContext } from "./App";
 import { ButtonContainer, InputContainer } from "./App.components";
 import { FormStatus, GenesisFormContainer } from "./Genesis.components";
-import { ValidatorData } from "./types";
+import { DataRow, ValidatorData } from "./types";
 
 const VALIDITY_ADDR = "tnam1q8lhvxys53dlc8wzlg7dyqf9avd0vff6wvav4amt";
 type Props = {
   accounts: Account[];
   validators: ValidatorData[] | null;
+  allValidators: DataRow[];
 };
 
-export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
+export const GenesisBondForm: React.FC<Props> = ({
+  accounts,
+  validators,
+  allValidators,
+}) => {
   const { integration } = useContext(AppContext)!;
   const validatorsSelectValue = validators?.map((v) => ({
     label: v.alias,
@@ -82,12 +87,23 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             amount: string;
             signatures: Record<string, string>;
           }>;
-
+          const fakeBond = {
+            amount: "19990",
+            signatures: {
+              tpknam1qqwjefewgdqeds9zf20kvpv6j6qk68vg7dgncvh5ehsv9xmdhlr62sgffhc:
+                "signam1qpam75at4sqprx2z8gudd6u8xtgxze8qxz7u733yfd6…f6sqwmy2renvckzf3mhuwdrghq2yuu7gjdcly4qkust050665",
+            },
+            source:
+              "tpknam1qqw6awvekhtxhw7v53ku7r48c5mu6n0jnj9g4uhdrzm5yymefd0c2xsku4k",
+            validator: "tnam1q9ude2ceqdj8dk6z3rwxnykm446j5lfkwy747kzp",
+          };
+          bondData.push(fakeBond);
           // Filter bonds where the source matches the account address
           const userBonds = bondData.filter(
-            (bond) => bond.source === account.address
+            (bond) => bond.source === account.publicKey
           );
-
+          console.log(bondData, "user bonds");
+          setPreviousBonds(userBonds);
           setDisablingError(undefined);
           setBalance(parseFloat(userBonds[0].amount));
         } else {
@@ -270,7 +286,7 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
           <>
             <InputContainer>
               <Select
-                data={validators ?? [{ label: "", value: "" }]}
+                data={allValidators}
                 value={validator}
                 label="Validator"
                 onChange={(e) => setValidator(e.target.value)}
@@ -357,10 +373,13 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             It looks like you already submitted a bond! <br /> <br />
             <b>Current Bonds:</b>
             {previousBonds.map((b) => {
-              const valName = validators?.find((v) => v.value === b.validator);
+              console.log(validators, "test validators");
+              const valName = allValidators?.find(
+                (v) => v.value === b.validator
+              );
               return (
-                <p key={b.source}>
-                  {valName?.label}: {b.amount} NAM
+                <p style={{ marginTop: 2 }} key={b.source}>
+                  {valName?.label} <br /> {b.amount} NAM
                 </p>
               );
             })}
@@ -442,7 +461,9 @@ export const GenesisBondForm: React.FC<Props> = ({ accounts, validators }) => {
             loading || (disablingError !== undefined && disablingError !== null)
           }
         >
-          {previousBonds.length > 0 ? "Edit Bonds" : "Sign Bond"}
+          {previousBonds.length > 0 && !editingBonds ?
+            "Edit Bonds"
+          : "Sign Bond"}
         </ActionButton>
       </ButtonContainer>
     </GenesisFormContainer>
