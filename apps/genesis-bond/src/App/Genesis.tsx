@@ -87,17 +87,7 @@ export const GenesisBondForm: React.FC<Props> = ({
             amount: string;
             signatures: Record<string, string>;
           }>;
-          const fakeBond = {
-            amount: "19990",
-            signatures: {
-              tpknam1qqwjefewgdqeds9zf20kvpv6j6qk68vg7dgncvh5ehsv9xmdhlr62sgffhc:
-                "signam1qpam75at4sqprx2z8gudd6u8xtgxze8qxz7u733yfd6…f6sqwmy2renvckzf3mhuwdrghq2yuu7gjdcly4qkust050665",
-            },
-            source:
-              "tpknam1qqw6awvekhtxhw7v53ku7r48c5mu6n0jnj9g4uhdrzm5yymefd0c2xsku4k",
-            validator: "tnam1q9ude2ceqdj8dk6z3rwxnykm446j5lfkwy747kzp",
-          };
-          bondData.push(fakeBond);
+
           // Filter bonds where the source matches the account address
           const userBonds = bondData.filter(
             (bond) => bond.source === account.publicKey
@@ -458,7 +448,9 @@ export const GenesisBondForm: React.FC<Props> = ({
             }
           }}
           disabled={
-            loading || (disablingError !== undefined && disablingError !== null)
+            (!editingBonds && amount && amount > balance) ||
+            loading ||
+            (disablingError !== undefined && disablingError !== null)
           }
         >
           {previousBonds.length > 0 && !editingBonds ?
