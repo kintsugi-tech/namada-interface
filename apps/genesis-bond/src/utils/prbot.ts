@@ -60,7 +60,7 @@ export const submitToPRBot = async (
 
     // Step 5: Send the POST request to your API route
     const response = await axios.post(
-      "https://namada-bond-api.vercel.app/api/bond",
+      "https://namada-bond-api.metasig.workers.dev/",
       payload,
       {
         headers: {

@@ -74,7 +74,7 @@ export const App: React.FC = () => {
     const fetchData = async (): Promise<void> => {
       try {
         const res = await fetch(
-          "https://validityops.github.io/namada-bond/validators_data.json"
+          "https://raw.githubusercontent.com/ValidityOps/namada-mainnet-genesis/main/validators_data.json"
         );
         if (!res.ok) {
           throw new Error("Failed to fetch data");
