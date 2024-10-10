@@ -104,6 +104,7 @@ export const GenesisBondForm: React.FC<Props> = ({
           const userBonds = bondData.filter(
             (bond) => bond.source === account.publicKey
           );
+          if (userBonds.length === 0) return;
           setPreviousBonds(userBonds);
           setDisablingError(undefined);
           setBalance(parseFloat(userBonds[0].amount));
