@@ -36,7 +36,10 @@ export const submitToPRBot = async (
 ): Promise<string | null> => {
   try {
     // Step 1: Dynamically determine the filename and branch name
-    const fileName = `${discordHandle.replace(/[@#]/g, "").toLowerCase() ?? `anon-${getRandomLetters()}`}-bond.toml`;
+    const fileName =
+      discordHandle ?
+        `${discordHandle.replace(/[@#]/g, "").toLowerCase()}-bond.toml`
+      : `anon-${getRandomLetters()}-bond.toml`;
     const branchName = `patch-${getRandomLetters()}`;
     const commitMessage = `Add ${fileName}`;
     const prTitle = `Add ${fileName}`;
