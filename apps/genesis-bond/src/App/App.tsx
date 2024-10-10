@@ -372,7 +372,11 @@ export const App: React.FC = () => {
           )}
           {params.row.website && (
             <a
-              href={params.row.website}
+              href={
+                params.row.website.startsWith("https://") ?
+                  params.row.website
+                : `https://${params.row.website}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "flex", alignItems: "center" }}
