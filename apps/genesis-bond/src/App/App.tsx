@@ -181,9 +181,16 @@ export const App: React.FC = () => {
       headerName: "Name",
       flex: 1,
       renderCell: (params) => (
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            fontWeight:
+              params.row.address === VALIDITY_ADDR ? "bold" : "normal",
+          }}
+        >
           {params.row.address === VALIDITY_ADDR && (
-            <Star sx={{ color: "gold", marginRight: "8px" }} />
+            <Star sx={{ color: "#FFD700 !important", marginRight: "8px" }} />
           )}
           {params.value}
         </div>
@@ -197,7 +204,6 @@ export const App: React.FC = () => {
         const row1 = getRowById(param1.id, param1.api);
         const row2 = getRowById(param2.id, param2.api);
 
-        // Check if the sort is descending
         const isDescending =
           param1.api.state.sorting.sortModel[0].sort === "desc";
 
@@ -218,6 +224,8 @@ export const App: React.FC = () => {
       headerName: "Address",
       flex: 1,
       valueFormatter: (params: string) => shortenAddress(params),
+      cellClassName: (params) =>
+        params.row.address === VALIDITY_ADDR ? "bold-cell" : "",
       sortComparator: (
         v1,
         v2,
@@ -250,9 +258,9 @@ export const App: React.FC = () => {
       width: 100,
       headerAlign: "right",
       align: "right",
-      valueFormatter: (params: number) => {
-        return `${params.toFixed(2)}%`;
-      },
+      valueFormatter: (params: number) => `${params.toFixed(2)}%`,
+      cellClassName: (params) =>
+        params.row.address === VALIDITY_ADDR ? "bold-cell" : "",
       sortComparator: (
         v1,
         v2,
@@ -288,6 +296,8 @@ export const App: React.FC = () => {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         }),
+      cellClassName: (params) =>
+        params.row.address === VALIDITY_ADDR ? "bold-cell" : "",
       sortComparator: (
         v1,
         v2,
@@ -319,6 +329,8 @@ export const App: React.FC = () => {
       flex: 1,
       width: 150,
       valueFormatter: (params: number) => `${params}%`,
+      cellClassName: (params) =>
+        params.row.address === VALIDITY_ADDR ? "bold-cell" : "",
       sortComparator: (
         v1,
         v2,
