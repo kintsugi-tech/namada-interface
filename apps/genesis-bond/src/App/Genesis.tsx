@@ -75,7 +75,7 @@ export const GenesisBondForm: React.FC<Props> = ({
     value: address,
   }));
 
-  const handleValidatorChange = (newValidatorAddress: string) => {
+  const handleValidatorChange = (newValidatorAddress: string): void => {
     setValidator(newValidatorAddress);
     const selectedValidator = allValidators.find(
       (v) => v.value === newValidatorAddress
@@ -84,6 +84,43 @@ export const GenesisBondForm: React.FC<Props> = ({
       onValidatorChange(selectedValidator as any); // <-- Notify parent of the change
     }
   };
+
+  useEffect(() => {
+    const getBalance = async (): Promise<void> => {
+      try {
+        const res = await fetch(
+          "https://validityops.github.io/namada-bond/balances.json"
+        );
+
+        if (res.ok) {
+          const balances = (await res.json()) as Record<string, string>;
+
+          // Check if the account address exists in the balances.json
+          if (balances[account.address]) {
+            setDisablingError(undefined);
+            setBalance(parseFloat(balances[account.address]));
+          } else {
+            // If the account address is not found, display an error
+            setDisablingError(
+              <p className="p-8">
+                We {`can't`} find a genesis balance for this account. Please
+                make sure you claimed your airdrop back in the days.
+              </p>
+            );
+          }
+        } else {
+          // Handle non-200 responses
+          console.error("Failed to fetch balances.json");
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      setError(undefined);
+    };
+
+    getBalance();
+  }, [account]);
 
   useEffect(() => {
     const checkSubmission = async (): Promise<void> => {
