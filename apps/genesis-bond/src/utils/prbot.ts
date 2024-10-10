@@ -50,11 +50,22 @@ export const submitToPRBot = async (
     // Step 3: Base64 encode the TOML content
     const base64Content = Buffer.from(tomlContent).toString("base64");
 
+    const pullRequestDescription = `
+## Discord Handle
+
+${discordHandle || "Insert your Discord handle here if you have one"}
+
+## Checklist before opening a pull request
+- [ ] My submissions follow the [instructions](<insert-link-here>)
+- [ ] I'm aware my submission will not be modifiable/deletable if merged
+`;
+
     // Step 4: Prepare the request payload
     const payload = {
       title: prTitle,
       commit: commitMessage,
       branch: branchName,
+      description: pullRequestDescription,
       discordHandle: discordHandle ?? "",
       files: [{ path: `transactions/${fileName}`, content: base64Content }],
     };
