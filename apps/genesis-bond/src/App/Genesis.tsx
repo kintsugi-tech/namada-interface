@@ -265,7 +265,7 @@ export const GenesisBondForm: React.FC<Props> = ({
 
             if (response) {
               setSuccess(
-                "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly. https://github.com/anoma/namada-mainnet-genesis/pull"
+                `Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly.`
               );
               setLoading(false);
             } else {
@@ -427,7 +427,21 @@ export const GenesisBondForm: React.FC<Props> = ({
           : error}
         </Alert>
       )}
-      {success && <Alert type="success">{success}</Alert>}
+      {success && (
+        <Alert type="success">
+          {`Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly.`}
+          <br />
+          <br />
+          <a
+            href={`https://github.com/anoma/namada-mainnet-genesis/pulls?q=is%3Apr+is%3Aopen+${account.address}`}
+            target="_blank"
+            className="underline"
+            rel="noreferrer"
+          >
+            View on GitHub
+          </a>
+        </Alert>
+      )}
       {loading && (
         <Alert type="info" className="text-center bg-transparent">
           <ImSpinner8 className="inline-block w-5 h-5 animate-spin mr-2" />
