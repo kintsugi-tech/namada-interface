@@ -89,7 +89,7 @@ export const GenesisBondForm: React.FC<Props> = ({
     const getBalance = async (): Promise<void> => {
       try {
         const res = await fetch(
-          "https://validityops.github.io/namada-bond/balances.json"
+          "https://raw.githubusercontent.com/ValidityOps/namada-mainnet-genesis/main/balances.json"
         );
 
         if (res.ok) {
