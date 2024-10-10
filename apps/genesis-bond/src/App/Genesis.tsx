@@ -48,7 +48,6 @@ export const GenesisBondForm: React.FC<Props> = ({
   );
 
   const [account, setAccount] = useState<Account>(accounts[0]);
-  const [discordHandle, setDiscordHandle] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [editingBonds, setEditingBonds] = useState(false);
   const [previousBonds, setPreviousBonds] = useState<
@@ -262,7 +261,7 @@ export const GenesisBondForm: React.FC<Props> = ({
         if (automatic) {
           // Submit bonds to api
           try {
-            const response = await submitToPRBot(bonds, discordHandle);
+            const response = await submitToPRBot(account, bonds);
 
             if (response) {
               setSuccess(
@@ -362,20 +361,6 @@ export const GenesisBondForm: React.FC<Props> = ({
                 </label>
               </div>
             </InputContainer>
-            {automatic && (
-              <div className="mt-2">
-                <label htmlFor="discord-handle" className="text-white text-sm">
-                  Discord Handle:
-                </label>
-                <input
-                  id="discord-handle"
-                  type="text"
-                  className="bg-neutral-600 text-white border border-gray-400 rounded px-2 py-1 ml-2"
-                  value={discordHandle}
-                  onChange={(e) => setDiscordHandle(e.target.value)}
-                />
-              </div>
-            )}
             {validator !== VALIDITY_ADDR && (
               <InputContainer>
                 <div className="flex items-center gap-2">

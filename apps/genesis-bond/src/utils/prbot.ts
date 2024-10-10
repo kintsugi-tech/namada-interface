@@ -1,7 +1,7 @@
+import { Account } from "@namada/types";
 import axios from "axios";
 import BigNumber from "bignumber.js";
 import { Bond } from "./genesis";
-
 // Helper function to generate TOML content from Bond objects
 export const generateTomlContent = (bonds: Bond[]): string => {
   let tomlContent = "";
@@ -31,15 +31,12 @@ const getRandomLetters = (): string => {
 };
 
 export const submitToPRBot = async (
-  bonds: Bond[],
-  discordHandle: string
+  account: Account,
+  bonds: Bond[]
 ): Promise<string | null> => {
   try {
     // Step 1: Dynamically determine the filename and branch name
-    const fileName =
-      discordHandle ?
-        `${discordHandle.replace(/[@#]/g, "").toLowerCase()}-bond.toml`
-      : `anon-${getRandomLetters()}-bond.toml`;
+    const fileName = account.alias;
     const branchName = `patch-${getRandomLetters()}`;
     const commitMessage = `Add ${fileName}`;
     const prTitle = `Add ${fileName}`;
@@ -51,9 +48,7 @@ export const submitToPRBot = async (
     const base64Content = Buffer.from(tomlContent).toString("base64");
 
     const pullRequestDescription = `
-## Discord Handle
-
-${discordHandle || "Insert your Discord handle here if you have one"}
+## Submitted by ValidityOps
 
 ## Checklist before opening a pull request
 - [ ] My submissions follow the [instructions](<insert-link-here>)
@@ -66,7 +61,6 @@ ${discordHandle || "Insert your Discord handle here if you have one"}
       commit: commitMessage,
       branch: branchName,
       description: pullRequestDescription,
-      discordHandle: discordHandle ?? "",
       files: [{ path: `transactions/${fileName}`, content: base64Content }],
     };
 
@@ -94,7 +88,7 @@ ${discordHandle || "Insert your Discord handle here if you have one"}
   }
 };
 
-export const prBotTest = async (): Promise<void> => {
+export const prBotTest = async (account: Account): Promise<void> => {
   const dummyBonds: Bond[] = [
     {
       source: "0x2234567890123456789012345678901234567890",
@@ -129,5 +123,5 @@ export const prBotTest = async (): Promise<void> => {
       ],
     },
   ];
-  await submitToPRBot(dummyBonds, "test#1234");
+  await submitToPRBot(account, dummyBonds);
 };

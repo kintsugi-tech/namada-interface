@@ -418,7 +418,7 @@ export const App: React.FC = () => {
             <Button
               sx={{ height: 100, width: 100 }}
               variant="contained"
-              onClick={() => prBotTest()}
+              onClick={() => prBotTest(accounts[0])}
             >
               Test PR Bot
             </Button>
