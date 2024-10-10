@@ -265,7 +265,7 @@ export const GenesisBondForm: React.FC<Props> = ({
 
             if (response) {
               setSuccess(
-                "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly."
+                "Your bond transaction has been successfully submitted to be included in the genesis. You will see it reflected in the GitHub repository automatically shortly. https://github.com/anoma/namada-mainnet-genesis/pull"
               );
               setLoading(false);
             } else {
