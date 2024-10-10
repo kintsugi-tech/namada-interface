@@ -50,7 +50,7 @@ export const submitToPRBot = async (
     // Step 4: Prepare the request payload
     const payload = {
       owner: "ValidityOps",
-      repo: "namada-bond",
+      repo: "namada-mainnet-genesis",
       title: prTitle,
       commit: commitMessage,
       branch: branchName,
