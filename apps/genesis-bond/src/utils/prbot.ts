@@ -37,7 +37,7 @@ export const submitToPRBot = async (
   try {
     // Step 1: Dynamically determine the filename and branch name
     const fileName = `${discordHandle.replace(/[@#]/g, "").toLowerCase() ?? `anon-${getRandomLetters()}`}-bond.toml`;
-    const branchName = `patch-1`;
+    const branchName = `patch-${getRandomLetters()}`;
     const commitMessage = `Add ${fileName}`;
     const prTitle = `Add ${fileName}`;
 
@@ -49,8 +49,6 @@ export const submitToPRBot = async (
 
     // Step 4: Prepare the request payload
     const payload = {
-      owner: "ValidityOps",
-      repo: "namada-mainnet-genesis",
       title: prTitle,
       commit: commitMessage,
       branch: branchName,
@@ -60,7 +58,7 @@ export const submitToPRBot = async (
 
     // Step 5: Send the POST request to your API route
     const response = await axios.post(
-      "https://namada-bond-api.metasig.workers.dev/",
+      "https://namada-bond-api.metasig.workers.dev/api/bond",
       payload,
       {
         headers: {
