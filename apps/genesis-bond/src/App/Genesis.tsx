@@ -189,7 +189,7 @@ export const GenesisBondForm: React.FC<Props> = ({
       setSuccess(undefined);
 
       if (!account || !validator || !amount) {
-        setError("Please provide the required values!");
+        setError("Please provide the required values.");
         return;
       }
 

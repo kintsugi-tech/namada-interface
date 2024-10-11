@@ -125,6 +125,7 @@ export const App: React.FC = () => {
 
     if (rows.length === 0) fetchData();
   }, [rows.length]);
+
   useUntil(
     {
       predFn: async () => Promise.resolve(integration.detect()),
