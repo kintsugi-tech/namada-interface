@@ -14,7 +14,6 @@ import { ImSpinner8 } from "react-icons/im";
 
 import { Bond, getBondTx, getSdkInstance } from "../utils";
 
-import { submitToPRBot } from "utils/prbot";
 import { AppContext } from "./App";
 import { ButtonContainer, InputContainer } from "./App.components";
 import { FormStatus, GenesisFormContainer } from "./Genesis.components";
@@ -60,7 +59,7 @@ export const GenesisBondForm: React.FC<Props> = ({
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [bonds, setBonds] = useState<Bond[]>([]);
   const [balance, setBalance] = useState<number>(0);
-  const [automatic, setAutomatic] = useState(true);
+  const [automatic, setAutomatic] = useState(false);
   const [tip, setTip] = useState(false);
 
   const [success, setSuccess] = useState<string>();
@@ -258,32 +257,11 @@ export const GenesisBondForm: React.FC<Props> = ({
           i++;
         }
 
-        if (automatic) {
-          // Submit bonds to api
-          try {
-            const response = await submitToPRBot(account, bonds);
-
-            if (response) {
-              setSuccess(
-                `Your bond transaction has been successfully submitted to be included in the genesis. Your submission will be pushed to the Namada GitHub repository automatically - no further action is required.`
-              );
-              setLoading(false);
-            } else {
-              throw new Error("Unable to submit bond transaction");
-            }
-          } catch (error: any) {
-            console.error("Error submitting bonds:", error.message || error);
-            setError(error.message || error);
-            setLoading(false);
-          }
-          return;
-        } else {
-          setBonds(bonds);
-          setSuccess(
-            "Your bond transaction has been signed correctly! Please copy paste the signed bond.toml from the below box, and open a pull request on GitHub yourself following this guide."
-          );
-          setLoading(false);
-        }
+        setBonds(bonds);
+        setSuccess(
+          "Your bond transaction has been signed correctly! Please copy paste the signed bond.toml from the below box, and open a pull request on GitHub yourself following this guide."
+        );
+        setLoading(false);
       } catch (e) {
         if (e instanceof Error) {
           if (e.message.includes("does not match Tx header chain_id")) {
@@ -348,16 +326,16 @@ export const GenesisBondForm: React.FC<Props> = ({
                   id="automatic-check"
                   className="bg-neutral-600 text-yellow-500"
                   checked={automatic}
-                  onChange={() => {
-                    setAutomatic(!automatic);
-                  }}
+                  disabled={true}
+                  // onChange={() => {
+                  //   setAutomatic(!automatic);
+                  // }}
                 />
                 <label
                   htmlFor={"automatic-check"}
                   className="text-white text-sm"
                 >
-                  Enable automatic submission of signature (no PR on GitHub
-                  needed)
+                  Only Manual Submission is available
                 </label>
               </div>
             </InputContainer>
